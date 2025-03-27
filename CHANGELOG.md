@@ -43,4 +43,22 @@ All notable changes to the ECG Viewer project will be documented in this file.
 - N/A
 
 ### Fixed
-- N/A 
+- N/A
+
+## [0.1.3] - 2025-03-27 17:50
+
+### Added
+- Tested ECG classifier on simulated data
+- Generated classification plots for all ECG samples
+- Created HTML report summarizing classification results
+
+### Changed
+- N/A
+
+### Fixed
+- N/A
+
+### Issues Identified
+- Classifier accuracy at 41.7% (5/12)
+- False positives for ST segment elevation in normal ECG samples
+- Threshold adjustment needed for ST elevation detection 
