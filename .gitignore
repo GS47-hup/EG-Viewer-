@@ -12,6 +12,7 @@ build/
 venv/
 env/
 ENV/
+ecg_build_env/
 
 # Local development settings
 .env
