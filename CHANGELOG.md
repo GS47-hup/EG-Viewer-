@@ -4,6 +4,24 @@ All notable changes to the ECG Viewer project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.6] - 2025-3-27
+
+### Added
+- Enhanced peak detection algorithm with specialized parameters for synthetic ECG data
+- Improved sensitivity for R-peak detection in noisy synthetic signals
+- Added adaptive thresholding for peak detection based on signal quality
+
+### Changed
+- Refactored ECG classifier code to use a more modular, object-oriented approach
+- Modified classify_ecg method to return detailed analysis results in a structured dictionary
+- Updated evaluation script to handle NaN values in histogram generation
+- Improved signal filtering with dedicated preprocessing pipeline
+
+### Fixed
+- Fixed issues with peak detection in synthetic ECG data with varying noise levels
+- Resolved errors in the evaluation script related to file path handling
+- Fixed histogram plotting errors when dealing with insufficient data points
+
 ## [0.1.5] - 2025-3-27
 
 ### Added
