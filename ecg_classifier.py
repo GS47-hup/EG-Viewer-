@@ -35,6 +35,20 @@ class ECGClassifier:
         self.classification_results = {}
         self.detailed_analysis = {}
         
+        # Initialize flags for borderline conditions
+        self.borderline_bradycardia = False
+        self.borderline_tachycardia = False
+        self.mild_variability = False
+        
+        # Initialize detailed analysis dictionary for storing metrics
+        self.detailed_analysis = {
+            'file_path': None,
+            'signal_quality': 'unknown',
+            'recorded_duration_sec': 0,
+            'beats_detected': 0,
+            'average_heart_rate_bpm': 0
+        }
+        
     def load_ecg_data(self, file_path):
         """
         Load ECG data from a CSV file.
@@ -405,10 +419,15 @@ class ECGClassifier:
             heart_rate_bpm = 60 / avg_rr_sec
             self.detailed_analysis['average_heart_rate_bpm'] = heart_rate_bpm
             
-            # Check for tachycardia
-            if heart_rate_bpm > 100:
+            # Context-based heart rate assessment - stricter thresholds for synthetic data
+            # The normal range is typically 60-100 BPM, but we'll adjust for synthetic data
+            tachycardia_threshold = 110 if is_synthetic else 100  # Higher threshold for synthetic data
+            bradycardia_threshold = 50 if is_synthetic else 55    # Lower threshold for synthetic data
+            
+            # Check for tachycardia - adjusted to reduce false positives
+            if heart_rate_bpm > tachycardia_threshold:
                 classification = "abnormal"
-                confidence = min(90, 50 + (heart_rate_bpm - 100))
+                confidence = min(90, 50 + (heart_rate_bpm - tachycardia_threshold))
                 reasons = ["Tachycardia detected (elevated heart rate)"]
                 return {
                     'prediction': classification,
@@ -418,10 +437,10 @@ class ECGClassifier:
                     'st_morphology': 'unknown'
                 }
             
-            # Check for bradycardia
-            if heart_rate_bpm < 60:
+            # Check for bradycardia - adjusted to reduce false positives
+            if heart_rate_bpm < bradycardia_threshold:
                 classification = "abnormal"
-                confidence = min(90, 50 + (60 - heart_rate_bpm))
+                confidence = min(90, 50 + (bradycardia_threshold - heart_rate_bpm))
                 reasons = ["Bradycardia detected (slow heart rate)"]
                 return {
                     'prediction': classification,
@@ -430,6 +449,18 @@ class ECGClassifier:
                     'st_segment_elevation_mv': 0,
                     'st_morphology': 'unknown'
                 }
+                
+            # Check for borderline bradycardia - consider normal but with lower confidence
+            if bradycardia_threshold <= heart_rate_bpm < 60:
+                # For heart rates in the borderline range, we'll still classify as normal
+                # but with reduced confidence and a note about it being borderline
+                self.borderline_bradycardia = True
+                
+            # Check for borderline tachycardia - consider normal but with lower confidence
+            if 100 < heart_rate_bpm <= tachycardia_threshold:
+                # For heart rates in the borderline range, we'll still classify as normal
+                # but with reduced confidence and a note about it being borderline
+                self.borderline_tachycardia = True
         else:
             # If we can't detect enough peaks, try with more aggressive settings for synthetic data
             if is_synthetic:
@@ -488,26 +519,62 @@ class ECGClassifier:
             rr_mean = np.mean(rr_intervals)
             cv = rr_std / rr_mean  # Coefficient of variation
             
+            # Calculate additional metrics for more robust arrhythmia detection
+            pnn50 = np.sum(np.abs(np.diff(rr_intervals)) > 0.05) / len(rr_intervals) * 100
+            rmssd = np.sqrt(np.mean(np.diff(rr_intervals) ** 2))
+            
+            # Dynamically adjusted threshold based on heart rate and data quality
+            cv_threshold = 0.15
+            if is_synthetic:
+                # For synthetic data, we need to be more tolerant of variations
+                cv_threshold = 0.20
+            elif heart_rate_bpm > 90:
+                # Higher heart rates tend to have more natural variability
+                cv_threshold = 0.18
+            
             # Irregular rhythm - high coefficient of variation
-            if cv > 0.15:
-                # Differentiate between AFib and other arrhythmias
-                # Check for fibrillatory waves in suspected AFib
-                if self.has_fibrillatory_waves(ecg_signal, ecg_data[:, 0], r_peaks, sampling_rate):
+            if cv > cv_threshold or pnn50 > 40:  # Using both CV and pNN50 for better detection
+                
+                # Look for patterns of irregular irregularity (characteristic of AFib)
+                irregular_irregularity = self.check_irregular_irregularity(rr_intervals)
+                
+                # Check for fibrillatory waves in suspected AFib with enhanced sensitivity
+                if self.has_fibrillatory_waves(ecg_signal, ecg_data[:, 0], r_peaks, sampling_rate) or irregular_irregularity:
+                    # Higher confidence if both fibrillatory waves and irregular rhythm are present
+                    afib_confidence = 85
+                    if irregular_irregularity:
+                        afib_confidence = 90
+                    
                     return {
                         'prediction': "abnormal",
-                        'confidence': 85,
+                        'confidence': afib_confidence,
                         'reasons': ["Atrial fibrillation pattern detected"],
                         'st_segment_elevation_mv': 0,
                         'st_morphology': 'unknown'
                     }
                 else:
+                    # Use RMSSD to help distinguish between arrhythmia types
+                    arrhythmia_type = "irregular heart rhythm"
+                    confidence = 80
+                    
+                    if rmssd > 0.12 and cv > 0.2:
+                        arrhythmia_type = "significant beat-to-beat variability"
+                        confidence = 85
+                    elif pnn50 > 50:
+                        arrhythmia_type = "frequent heart rate changes"
+                        confidence = 82
+                    
                     return {
                         'prediction': "abnormal",
-                        'confidence': 80,
-                        'reasons': ["Arrhythmia detected (irregular heart rhythm)"],
+                        'confidence': confidence,
+                        'reasons': [f"Arrhythmia detected ({arrhythmia_type})"],
                         'st_segment_elevation_mv': 0,
                         'st_morphology': 'unknown'
                     }
+            else:
+                # Record mild variability for borderline cases
+                if cv > 0.10:
+                    self.mild_variability = True
         
         # Check for ST-segment elevation
         st_elevation, st_morphology = self.detect_st_elevation(ecg_signal, ecg_data[:, 0], r_peaks, sampling_rate)
@@ -557,6 +624,26 @@ class ECGClassifier:
         if heart_rate_bpm < 65:
             reasons.append("Heart rate at lower end of normal range")
             confidence -= 5
+            
+        # Include the borderline conditions we identified earlier
+        if hasattr(self, 'borderline_bradycardia') and self.borderline_bradycardia:
+            reasons.append("Borderline bradycardia (slow heart rate, but within acceptable limits)")
+            confidence -= 10
+            # Reset the flag
+            self.borderline_bradycardia = False
+            
+        if hasattr(self, 'borderline_tachycardia') and self.borderline_tachycardia:
+            reasons.append("Borderline tachycardia (elevated heart rate, but within acceptable limits)")
+            confidence -= 10
+            # Reset the flag
+            self.borderline_tachycardia = False
+            
+        # Include information about mild rhythm variability
+        if hasattr(self, 'mild_variability') and self.mild_variability:
+            reasons.append("Mild sinus arrhythmia (normal variation)")
+            confidence -= 5
+            # Reset the flag
+            self.mild_variability = False
         
         return {
             'prediction': classification,
@@ -583,34 +670,82 @@ class ECGClassifier:
         if len(r_peaks) < 2:
             return False
         
+        # Enhanced detection using multiple frequency bands for better sensitivity
         # Apply bandpass filter to isolate frequencies of interest for f-waves (4-8 Hz)
-        b, a = signal.butter(3, [4/(sampling_rate/2), 8/(sampling_rate/2)], 'bandpass')
-        filtered = signal.filtfilt(b, a, ecg_mv)
+        b1, a1 = signal.butter(3, [4/(sampling_rate/2), 8/(sampling_rate/2)], 'bandpass')
+        filtered1 = signal.filtfilt(b1, a1, ecg_mv)
+        
+        # Also check a slightly broader band (3-9 Hz) to catch more subtle f-waves
+        b2, a2 = signal.butter(3, [3/(sampling_rate/2), 9/(sampling_rate/2)], 'bandpass')
+        filtered2 = signal.filtfilt(b2, a2, ecg_mv)
         
         # Check segments before each QRS complex (where P waves would be)
-        f_wave_powers = []
-        for peak_idx in r_peaks[1:]:  # Skip the first peak
+        f_wave_powers1 = []
+        f_wave_powers2 = []
+        p_wave_detected = []
+        
+        for i, peak_idx in enumerate(r_peaks[1:], 1):  # Skip the first peak
             # Look at segment before the QRS complex
-            p_segment_start = max(0, peak_idx - int(0.2 * sampling_rate))  # 200ms before R peak
+            # Adjust segment based on heart rate to better catch P waves
+            rr_interval = r_peaks[i] - r_peaks[i-1]
+            p_segment_start = r_peaks[i-1] + int(0.66 * rr_interval)  # 66% into the RR interval
             p_segment_end = peak_idx - int(0.05 * sampling_rate)  # 50ms before R peak
             
             if p_segment_end > p_segment_start:
                 # Calculate power in the typical f-wave frequency range
-                segment = filtered[p_segment_start:p_segment_end]
-                f_wave_powers.append(np.mean(segment**2))
+                segment1 = filtered1[p_segment_start:p_segment_end]
+                segment2 = filtered2[p_segment_start:p_segment_end]
+                
+                # Get the original ECG segment to check for P waves
+                original_segment = ecg_mv[p_segment_start:p_segment_end]
+                
+                f_wave_powers1.append(np.mean(segment1**2))
+                f_wave_powers2.append(np.mean(segment2**2))
+                
+                # Try to detect a clear P wave peak (would rule out AFib)
+                # Distinct P wave would be a local maximum with reasonable prominence
+                peaks, properties = signal.find_peaks(original_segment, 
+                                                     prominence=0.1*np.max(original_segment),
+                                                     distance=int(0.05 * sampling_rate))
+                
+                # If we found a prominent peak that looks like a P wave
+                p_wave_detected.append(len(peaks) > 0 and len(peaks) < 3)
         
-        if not f_wave_powers:
+        if not f_wave_powers1 or not f_wave_powers2:
             return False
         
         # High power in f-wave frequency band without clear P waves suggests AFib
-        avg_power = np.mean(f_wave_powers)
-        threshold = 0.003  # Threshold determined empirically
+        avg_power1 = np.mean(f_wave_powers1)
+        avg_power2 = np.mean(f_wave_powers2)
+        
+        # Dynamic threshold based on signal characteristics
+        threshold = 0.003  # Base threshold
+        
+        # Increase threshold for noisy signals
+        noise_level = np.std(ecg_mv) / np.mean(np.abs(ecg_mv))
+        if noise_level > 0.2:
+            threshold *= (1 + noise_level)
         
         # Check if we have significant f-wave power and irregular rhythm
         rr_intervals = np.diff(time_ms[r_peaks])
         rr_cv = np.std(rr_intervals) / np.mean(rr_intervals)
         
-        return avg_power > threshold and rr_cv > 0.15  # Both irregular rhythm and f-waves
+        # Criteria for AFib:
+        # 1. Irregular rhythm (high RR coefficient of variation)
+        # 2. High power in f-wave frequency bands
+        # 3. Absence of clear P waves in most segments
+        
+        # Calculate percentage of segments with P waves
+        p_wave_percentage = np.mean(p_wave_detected) if p_wave_detected else 0
+        
+        # If we detect clear P waves in more than 40% of segments, it's likely not AFib
+        if p_wave_percentage > 0.4:
+            return False
+            
+        # Return true if we have irregular rhythm, high f-wave power, and few P waves
+        f_wave_power_detected = (avg_power1 > threshold) or (avg_power2 > threshold * 0.8)
+        
+        return f_wave_power_detected and rr_cv > 0.15
     
     def plot_ecg_with_analysis(self, file_path, output_dir="classification_results"):
         """
@@ -730,6 +865,31 @@ class ECGClassifier:
         filtered_signal = self.filter_ecg(ecg_signal, sampling_rate)
         
         return filtered_signal
+
+    def check_irregular_irregularity(self, rr_intervals):
+        """
+        Check for the pattern of 'irregular irregularity' characteristic of atrial fibrillation.
+        
+        Args:
+            rr_intervals: Array of RR intervals in seconds
+            
+        Returns:
+            bool: True if irregular irregularity pattern is detected
+        """
+        if len(rr_intervals) < 6:
+            return False
+            
+        # Calculate first and second order differences
+        first_diff = np.diff(rr_intervals)
+        second_diff = np.diff(first_diff)
+        
+        # Check if both first and second order differences are highly variable
+        first_cv = np.std(first_diff) / np.mean(np.abs(first_diff)) if np.mean(np.abs(first_diff)) > 0 else 0
+        second_cv = np.std(second_diff) / np.mean(np.abs(second_diff)) if np.mean(np.abs(second_diff)) > 0 else 0
+        
+        # Pattern recognition for irregular irregularity
+        # We're looking for variability in both intervals and the pattern of intervals
+        return first_cv > 0.7 and second_cv > 0.5
 
 def test_classifier():
     """Test the classifier on sample data"""
