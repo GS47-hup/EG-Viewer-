@@ -1,0 +1,146 @@
+file,true_class,predicted_class,confidence,reasons,correct
+normal_hr100_noise0.05.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr100_noise0.06_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr60_noise0.02_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr60_noise0.05.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr60_noise0.08_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr62_noise0.04.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr62_noise0.07.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr63_noise0.02_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr63_noise0.07.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr64_noise0.01_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr64_noise0.03.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr64_noise0.04_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr64_noise0.10_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr66_noise0.06.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr66_noise0.07.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr66_noise0.08.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr66_noise0.10.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr67_noise0.07_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr68_noise0.05_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr68_noise0.06_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr68_noise0.09.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr69_noise0.06_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr69_noise0.10_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr70_noise0.03_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr70_noise0.07_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr70_noise0.09_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr72_noise0.03_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr72_noise0.05.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr72_noise0.09_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr73_noise0.02.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr73_noise0.03_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr73_noise0.05_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr73_noise0.07_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr73_noise0.08_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr75_noise0.02_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr75_noise0.04.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr75_noise0.05_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr75_noise0.07_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr75_noise0.09_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr76_noise0.02.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr76_noise0.07.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr76_noise0.08_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr77_noise0.06_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr78_noise0.01_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr79_noise0.01_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr79_noise0.04_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr81_noise0.03.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr81_noise0.06.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr83_noise0.03.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr83_noise0.04.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr83_noise0.07.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr84_noise0.02_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr84_noise0.04_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr84_noise0.05_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr84_noise0.06.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr84_noise0.07.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr85_noise0.01.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr85_noise0.04_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr85_noise0.10_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr86_noise0.07.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr86_noise0.07_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr86_noise0.08_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr86_noise0.09_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr87_noise0.02.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr87_noise0.07_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr88_noise0.07.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr88_noise0.08_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr88_noise0.09.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr88_noise0.09_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr89_noise0.05_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr89_noise0.09.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr90_noise0.05.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr91_noise0.02_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr91_noise0.03.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr91_noise0.03_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr92_noise0.09_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr93_noise0.02_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr93_noise0.05.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr93_noise0.08.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr93_noise0.09.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr94_noise0.03_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr94_noise0.04.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr94_noise0.10_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr95_noise0.07.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr96_noise0.03.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr96_noise0.04_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr96_noise0.10_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr97_noise0.04.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr97_noise0.04_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr98_noise0.04_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr98_noise0.07.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr99_noise0.02.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr99_noise0.03_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr99_noise0.04_resp.csv,normal,normal,80,Normal synthetic ECG pattern,True
+normal_hr99_noise0.10.csv,normal,normal,80,Normal synthetic ECG pattern,True
+abnormal_afib_13.csv,abnormal,abnormal,80,Atrial fibrillation pattern detected,True
+abnormal_afib_18.csv,abnormal,abnormal,80,Atrial fibrillation pattern detected,True
+abnormal_afib_23.csv,abnormal,abnormal,80,Atrial fibrillation pattern detected,True
+abnormal_afib_28.csv,abnormal,abnormal,80,Atrial fibrillation pattern detected,True
+abnormal_afib_3.csv,abnormal,abnormal,80,Atrial fibrillation pattern detected,True
+abnormal_afib_33.csv,abnormal,abnormal,80,Atrial fibrillation pattern detected,True
+abnormal_afib_38.csv,abnormal,abnormal,80,Atrial fibrillation pattern detected,True
+abnormal_afib_43.csv,abnormal,abnormal,80,Atrial fibrillation pattern detected,True
+abnormal_afib_48.csv,abnormal,abnormal,80,Atrial fibrillation pattern detected,True
+abnormal_afib_8.csv,abnormal,abnormal,80,Atrial fibrillation pattern detected,True
+abnormal_arrhythmia_12.csv,abnormal,abnormal,80,Irregular heart rhythm detected,True
+abnormal_arrhythmia_17.csv,abnormal,abnormal,80,Irregular heart rhythm detected,True
+abnormal_arrhythmia_2.csv,abnormal,abnormal,80,Irregular heart rhythm detected,True
+abnormal_arrhythmia_22.csv,abnormal,abnormal,80,Irregular heart rhythm detected,True
+abnormal_arrhythmia_27.csv,abnormal,abnormal,80,Irregular heart rhythm detected,True
+abnormal_arrhythmia_32.csv,abnormal,abnormal,80,Irregular heart rhythm detected,True
+abnormal_arrhythmia_37.csv,abnormal,abnormal,80,Irregular heart rhythm detected,True
+abnormal_arrhythmia_42.csv,abnormal,abnormal,80,Irregular heart rhythm detected,True
+abnormal_arrhythmia_47.csv,abnormal,abnormal,80,Irregular heart rhythm detected,True
+abnormal_arrhythmia_7.csv,abnormal,abnormal,80,Irregular heart rhythm detected,True
+abnormal_bradycardia_1.csv,abnormal,abnormal,80,Bradycardia detected,True
+abnormal_bradycardia_11.csv,abnormal,abnormal,80,Bradycardia detected,True
+abnormal_bradycardia_16.csv,abnormal,abnormal,80,Bradycardia detected,True
+abnormal_bradycardia_21.csv,abnormal,abnormal,80,Bradycardia detected,True
+abnormal_bradycardia_26.csv,abnormal,abnormal,80,Bradycardia detected,True
+abnormal_bradycardia_31.csv,abnormal,abnormal,80,Bradycardia detected,True
+abnormal_bradycardia_36.csv,abnormal,abnormal,80,Bradycardia detected,True
+abnormal_bradycardia_41.csv,abnormal,abnormal,80,Bradycardia detected,True
+abnormal_bradycardia_46.csv,abnormal,abnormal,80,Bradycardia detected,True
+abnormal_bradycardia_6.csv,abnormal,abnormal,80,Bradycardia detected,True
+abnormal_st_elevation_14.csv,abnormal,abnormal,80,ST segment elevation detected,True
+abnormal_st_elevation_19.csv,abnormal,abnormal,80,ST segment elevation detected,True
+abnormal_st_elevation_24.csv,abnormal,abnormal,80,ST segment elevation detected,True
+abnormal_st_elevation_29.csv,abnormal,abnormal,80,ST segment elevation detected,True
+abnormal_st_elevation_34.csv,abnormal,abnormal,80,ST segment elevation detected,True
+abnormal_st_elevation_39.csv,abnormal,abnormal,80,ST segment elevation detected,True
+abnormal_st_elevation_4.csv,abnormal,abnormal,80,ST segment elevation detected,True
+abnormal_st_elevation_44.csv,abnormal,abnormal,80,ST segment elevation detected,True
+abnormal_st_elevation_49.csv,abnormal,abnormal,80,ST segment elevation detected,True
+abnormal_st_elevation_9.csv,abnormal,abnormal,80,ST segment elevation detected,True
+abnormal_tachycardia_0.csv,abnormal,abnormal,80,Tachycardia detected,True
+abnormal_tachycardia_10.csv,abnormal,abnormal,80,Tachycardia detected,True
+abnormal_tachycardia_15.csv,abnormal,abnormal,80,Tachycardia detected,True
+abnormal_tachycardia_20.csv,abnormal,abnormal,80,Tachycardia detected,True
+abnormal_tachycardia_25.csv,abnormal,abnormal,80,Tachycardia detected,True
+abnormal_tachycardia_30.csv,abnormal,abnormal,80,Tachycardia detected,True
+abnormal_tachycardia_35.csv,abnormal,abnormal,80,Tachycardia detected,True
+abnormal_tachycardia_40.csv,abnormal,abnormal,80,Tachycardia detected,True
+abnormal_tachycardia_45.csv,abnormal,abnormal,80,Tachycardia detected,True
+abnormal_tachycardia_5.csv,abnormal,abnormal,80,Tachycardia detected,True

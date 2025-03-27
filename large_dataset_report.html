@@ -1,0 +1,1540 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>ECG Classification Report - Large Dataset</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1, h2 { color: #333; }
+            table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            .metrics { display: flex; flex-wrap: wrap; }
+            .metric-card { background-color: #f0f0f0; border-radius: 5px; margin: 10px; padding: 15px; width: 200px; }
+            .metric-value { font-size: 24px; font-weight: bold; margin: 10px 0; }
+            .correct { color: green; }
+            .incorrect { color: red; }
+            img { max-width: 100%; height: auto; margin: 20px 0; }
+        </style>
+    </head>
+    <body>
+        <h1>ECG Classification Report - Large Dataset</h1>
+        
+        <h2>Performance Metrics</h2>
+        <div class="metrics">
+            <div class="metric-card">
+                <div>Accuracy</div>
+                <div class="metric-value">100.0%</div>
+                <div>(145/145)</div>
+            </div>
+            <div class="metric-card">
+                <div>Sensitivity</div>
+                <div class="metric-value">100.0%</div>
+                <div>(True Positive Rate)</div>
+            </div>
+            <div class="metric-card">
+                <div>Specificity</div>
+                <div class="metric-value">100.0%</div>
+                <div>(True Negative Rate)</div>
+            </div>
+            <div class="metric-card">
+                <div>Precision</div>
+                <div class="metric-value">100.0%</div>
+                <div>(Positive Predictive Value)</div>
+            </div>
+            <div class="metric-card">
+                <div>F1 Score</div>
+                <div class="metric-value">100.0%</div>
+                <div>(Harmonic Mean)</div>
+            </div>
+        </div>
+        
+        <h2>Confusion Matrix</h2>
+        <table>
+            <tr>
+                <th></th>
+                <th>Predicted Normal</th>
+                <th>Predicted Abnormal</th>
+            </tr>
+            <tr>
+                <th>Actual Normal</th>
+                <td>95</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <th>Actual Abnormal</th>
+                <td>0</td>
+                <td>50</td>
+            </tr>
+        </table>
+        
+        <h2>Performance Visualization</h2>
+        <img src="classifier_performance.png" alt="Performance Visualization">
+        
+        <h2>Classification Results</h2>
+        <table>
+            <tr>
+                <th>File</th>
+                <th>True Class</th>
+                <th>Predicted Class</th>
+                <th>Confidence</th>
+                
+                
+                <th>Reasons</th>
+            </tr>
+    
+            <tr class="correct">
+                <td>normal_hr100_noise0.05.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr100_noise0.06_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr60_noise0.02_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr60_noise0.05.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr60_noise0.08_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr62_noise0.04.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr62_noise0.07.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr63_noise0.02_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr63_noise0.07.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr64_noise0.01_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr64_noise0.03.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr64_noise0.04_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr64_noise0.10_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr66_noise0.06.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr66_noise0.07.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr66_noise0.08.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr66_noise0.10.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr67_noise0.07_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr68_noise0.05_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr68_noise0.06_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr68_noise0.09.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr69_noise0.06_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr69_noise0.10_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr70_noise0.03_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr70_noise0.07_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr70_noise0.09_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr72_noise0.03_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr72_noise0.05.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr72_noise0.09_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr73_noise0.02.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr73_noise0.03_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr73_noise0.05_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr73_noise0.07_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr73_noise0.08_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr75_noise0.02_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr75_noise0.04.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr75_noise0.05_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr75_noise0.07_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr75_noise0.09_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr76_noise0.02.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr76_noise0.07.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr76_noise0.08_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr77_noise0.06_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr78_noise0.01_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr79_noise0.01_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr79_noise0.04_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr81_noise0.03.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr81_noise0.06.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr83_noise0.03.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr83_noise0.04.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr83_noise0.07.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr84_noise0.02_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr84_noise0.04_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr84_noise0.05_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr84_noise0.06.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr84_noise0.07.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr85_noise0.01.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr85_noise0.04_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr85_noise0.10_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr86_noise0.07.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr86_noise0.07_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr86_noise0.08_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr86_noise0.09_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr87_noise0.02.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr87_noise0.07_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr88_noise0.07.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr88_noise0.08_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr88_noise0.09.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr88_noise0.09_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr89_noise0.05_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr89_noise0.09.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr90_noise0.05.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr91_noise0.02_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr91_noise0.03.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr91_noise0.03_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr92_noise0.09_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr93_noise0.02_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr93_noise0.05.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr93_noise0.08.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr93_noise0.09.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr94_noise0.03_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr94_noise0.04.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr94_noise0.10_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr95_noise0.07.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr96_noise0.03.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr96_noise0.04_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr96_noise0.10_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr97_noise0.04.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr97_noise0.04_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr98_noise0.04_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr98_noise0.07.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr99_noise0.02.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr99_noise0.03_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr99_noise0.04_resp.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>normal_hr99_noise0.10.csv</td>
+                <td>NORMAL</td>
+                <td>normal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Normal synthetic ECG pattern</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_afib_13.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Atrial fibrillation pattern detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_afib_18.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Atrial fibrillation pattern detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_afib_23.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Atrial fibrillation pattern detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_afib_28.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Atrial fibrillation pattern detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_afib_3.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Atrial fibrillation pattern detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_afib_33.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Atrial fibrillation pattern detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_afib_38.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Atrial fibrillation pattern detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_afib_43.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Atrial fibrillation pattern detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_afib_48.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Atrial fibrillation pattern detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_afib_8.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Atrial fibrillation pattern detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_arrhythmia_12.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Irregular heart rhythm detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_arrhythmia_17.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Irregular heart rhythm detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_arrhythmia_2.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Irregular heart rhythm detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_arrhythmia_22.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Irregular heart rhythm detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_arrhythmia_27.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Irregular heart rhythm detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_arrhythmia_32.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Irregular heart rhythm detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_arrhythmia_37.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Irregular heart rhythm detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_arrhythmia_42.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Irregular heart rhythm detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_arrhythmia_47.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Irregular heart rhythm detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_arrhythmia_7.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Irregular heart rhythm detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_bradycardia_1.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Bradycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_bradycardia_11.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Bradycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_bradycardia_16.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Bradycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_bradycardia_21.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Bradycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_bradycardia_26.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Bradycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_bradycardia_31.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Bradycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_bradycardia_36.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Bradycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_bradycardia_41.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Bradycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_bradycardia_46.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Bradycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_bradycardia_6.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Bradycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_st_elevation_14.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>ST segment elevation detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_st_elevation_19.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>ST segment elevation detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_st_elevation_24.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>ST segment elevation detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_st_elevation_29.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>ST segment elevation detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_st_elevation_34.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>ST segment elevation detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_st_elevation_39.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>ST segment elevation detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_st_elevation_4.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>ST segment elevation detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_st_elevation_44.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>ST segment elevation detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_st_elevation_49.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>ST segment elevation detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_st_elevation_9.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>ST segment elevation detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_tachycardia_0.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Tachycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_tachycardia_10.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Tachycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_tachycardia_15.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Tachycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_tachycardia_20.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Tachycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_tachycardia_25.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Tachycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_tachycardia_30.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Tachycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_tachycardia_35.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Tachycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_tachycardia_40.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Tachycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_tachycardia_45.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Tachycardia detected</td>
+            </tr>
+        
+            <tr class="correct">
+                <td>abnormal_tachycardia_5.csv</td>
+                <td>ABNORMAL</td>
+                <td>abnormal</td>
+                <td>80.0%</td>
+                
+                
+                <td>Tachycardia detected</td>
+            </tr>
+        
+        </table>
+    </body>
+    </html>
+    
