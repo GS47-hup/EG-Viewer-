@@ -168,6 +168,40 @@ class ECGSimulator(QtWidgets.QMainWindow):
         self.recordButton.setEnabled(False)
         self.controlLayout.addWidget(self.recordButton)
         
+        # Add real-world ECG data section
+        self.realWorldGroup = QtWidgets.QGroupBox("Real-World ECG Data")
+        self.realWorldLayout = QtWidgets.QVBoxLayout(self.realWorldGroup)
+        
+        # Add load real-world ECG button
+        self.loadRealWorldButton = QtWidgets.QPushButton("Load Real-World ECG")
+        self.loadRealWorldButton.clicked.connect(self.load_real_world_ecg)
+        self.realWorldLayout.addWidget(self.loadRealWorldButton)
+        
+        # Add sample selection for real-world ECG
+        self.sampleLayout = QtWidgets.QHBoxLayout()
+        self.sampleLabel = QtWidgets.QLabel("Sample:")
+        self.sampleSpinBox = QtWidgets.QSpinBox()
+        self.sampleSpinBox.setMinimum(1)
+        self.sampleSpinBox.setMaximum(1000)  # Will be updated when file is loaded
+        self.sampleSpinBox.setValue(1)
+        self.loadSampleButton = QtWidgets.QPushButton("Load Sample")
+        self.loadSampleButton.clicked.connect(self.load_real_world_sample)
+        self.loadSampleButton.setEnabled(False)
+        
+        self.sampleLayout.addWidget(self.sampleLabel)
+        self.sampleLayout.addWidget(self.sampleSpinBox)
+        self.sampleLayout.addWidget(self.loadSampleButton)
+        
+        self.realWorldLayout.addLayout(self.sampleLayout)
+        
+        # Add a sample info label
+        self.sampleInfoLabel = QtWidgets.QLabel("No real-world data loaded")
+        self.sampleInfoLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.realWorldLayout.addWidget(self.sampleInfoLabel)
+        
+        # Add the real-world group to the main control layout
+        self.controlLayout.addWidget(self.realWorldGroup)
+        
         # Add status bar
         self.statusBar = QtWidgets.QStatusBar()
         self.setStatusBar(self.statusBar)
@@ -193,11 +227,17 @@ class ECGSimulator(QtWidgets.QMainWindow):
         
         # Initialize simulation variables
         self.ecg_file = 'Real ECG.csv'
+        self.real_world_ecg_file = 'real-worldecg.csv'
         self.loaded_samples = None
         self.current_sample_label = None
         self.monitoring_active = False
         self.recording_active = False
         self.recorded_data = []
+        
+        # Real-world ECG variables
+        self.real_world_data = None
+        self.real_world_samples = None
+        self.current_real_world_sample = None
         
         # Real-time monitoring variables
         self.monitoring_timer = QtCore.QTimer()
@@ -219,6 +259,11 @@ class ECGSimulator(QtWidgets.QMainWindow):
             self.statusBar.showMessage(f"Warning: ECG file '{self.ecg_file}' not found.")
             self.loadNormalButton.setEnabled(False)
             self.loadAbnormalButton.setEnabled(False)
+            
+        # Check if real-world ECG file exists
+        if not os.path.exists(self.real_world_ecg_file):
+            self.statusBar.showMessage(f"Warning: Real-world ECG file '{self.real_world_ecg_file}' not found.")
+            self.loadRealWorldButton.setEnabled(False)
     
     def _load_ecg_templates(self):
         """Load or create ECG templates for different types"""
@@ -556,11 +601,170 @@ class ECGSimulator(QtWidgets.QMainWindow):
             import traceback
             traceback.print_exc()
     
+    def load_real_world_ecg(self):
+        """Load real-world ECG data from file"""
+        try:
+            if not os.path.exists(self.real_world_ecg_file):
+                # Let user select a file if default not found
+                file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
+                    self, "Select Real-World ECG File", "", "CSV Files (*.csv);;All Files (*.*)")
+                
+                if not file_path:
+                    self.statusBar.showMessage("No file selected")
+                    return
+                
+                self.real_world_ecg_file = file_path
+            
+            # Load real-world ECG data
+            self.statusBar.showMessage(f"Loading real-world ECG data from {self.real_world_ecg_file}...")
+            
+            # Read the first line to determine format
+            with open(self.real_world_ecg_file, 'r') as f:
+                first_line = f.readline().strip()
+            
+            # Check if data is comma-separated without headers
+            if ',' in first_line and not first_line.startswith('#'):
+                # Data format appears to be a CSV without headers, with samples as rows
+                self.real_world_data = pd.read_csv(self.real_world_ecg_file, header=None)
+                self.real_world_samples = len(self.real_world_data)
+                
+                # Update sample selector
+                self.sampleSpinBox.setMaximum(self.real_world_samples)
+                self.sampleSpinBox.setValue(1)
+                self.loadSampleButton.setEnabled(True)
+                
+                self.statusBar.showMessage(f"Loaded {self.real_world_samples} real-world ECG samples")
+                self.sampleInfoLabel.setText(f"Real-world data: {self.real_world_samples} samples available")
+            else:
+                # Unknown format
+                self.statusBar.showMessage("Error: Unrecognized real-world ECG data format")
+                return
+            
+        except Exception as e:
+            self.statusBar.showMessage(f"Error loading real-world ECG data: {str(e)}")
+            import traceback
+            traceback.print_exc()
+    
+    def load_real_world_sample(self):
+        """Load a specific real-world ECG sample"""
+        if self.real_world_data is None:
+            self.statusBar.showMessage("Error: No real-world ECG data loaded")
+            return
+        
+        try:
+            # Stop any active monitoring
+            if self.monitoring_active:
+                self.stop_real_time_monitoring()
+            
+            # Get the selected sample index
+            sample_idx = self.sampleSpinBox.value() - 1  # Convert to 0-based index
+            
+            if sample_idx < 0 or sample_idx >= self.real_world_samples:
+                self.statusBar.showMessage(f"Error: Sample index {sample_idx+1} is out of range")
+                return
+            
+            # Extract the sample
+            sample_data = self.real_world_data.iloc[sample_idx].values
+            
+            # The last value is often a label or class
+            ecg_values = sample_data[:-1] if len(sample_data) > 100 else sample_data
+            
+            # Generate time axis (assume 250 Hz sampling rate)
+            ecg_time = np.arange(len(ecg_values)) * (1000 / self.sampling_rate)  # in ms
+            
+            # Detect R-peaks
+            try:
+                r_peaks, _ = signal.find_peaks(
+                    ecg_values, 
+                    height=0.5*max(ecg_values),
+                    distance=self.sampling_rate * 0.3  # Minimum 300ms between peaks (200 BPM max)
+                )
+            except Exception as e:
+                self.statusBar.showMessage(f"Error detecting R-peaks: {str(e)}")
+                r_peaks = []
+            
+            # Calculate heart rate if we have enough peaks
+            heart_rate = 0
+            if len(r_peaks) > 1:
+                # Calculate time between peaks in ms
+                rr_intervals = np.diff(ecg_time[r_peaks])
+                # Convert to heart rate in BPM
+                heart_rate = int(60000 / np.mean(rr_intervals))
+            
+            # Update the ECG canvas
+            self.ecg_canvas.update_plot(ecg_time, ecg_values, r_peaks)
+            
+            # Store the current real-world sample
+            self.current_real_world_sample = {
+                'time': ecg_time,
+                'values': ecg_values,
+                'r_peaks': r_peaks,
+                'heart_rate': heart_rate
+            }
+            
+            # Update UI
+            self.sampleInfoLabel.setText(
+                f"Real-world ECG Sample #{sample_idx+1}: "
+                f"{len(ecg_values)} points, {len(r_peaks)} peaks, "
+                f"HR: {heart_rate} BPM"
+            )
+            
+            self.statusBar.showMessage(f"Loaded real-world ECG sample #{sample_idx+1}")
+            self.classifyButton.setEnabled(True)
+            
+        except Exception as e:
+            self.statusBar.showMessage(f"Error loading real-world ECG sample: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            
     def classify_ecg(self):
         """Classify the current ECG data"""
         try:
+            # For real-world samples
+            if self.current_real_world_sample is not None:
+                # Simple classification based on heart rate and waveform characteristics
+                heart_rate = self.current_real_world_sample['heart_rate']
+                r_peaks = self.current_real_world_sample['r_peaks']
+                values = self.current_real_world_sample['values']
+                
+                # Calculate RR interval variability (for AFib detection)
+                rr_variability = 0
+                if len(r_peaks) > 2:
+                    rr_intervals = np.diff(r_peaks)
+                    rr_variability = np.std(rr_intervals) / np.mean(rr_intervals)
+                
+                # Detect ST segment elevation
+                st_elevation = 0
+                if len(r_peaks) > 0:
+                    # Check 80-120ms after each R peak for ST segment
+                    st_points = []
+                    for peak in r_peaks:
+                        if peak + 20 < len(values):  # at least 80ms after R peak
+                            st_point = values[peak + 20:peak + 30].mean()  # 80-120ms segment
+                            st_points.append(st_point)
+                    
+                    if st_points:
+                        st_elevation = np.mean(st_points)
+                
+                # Simple classification based on features
+                if heart_rate < 60:
+                    abnormality = "bradycardia"
+                    is_normal = False
+                elif heart_rate > 100:
+                    abnormality = "tachycardia"
+                    is_normal = False
+                elif rr_variability > 0.2:  # High RR interval variability suggests AFib
+                    abnormality = "atrial fibrillation"
+                    is_normal = False
+                elif st_elevation > 0.2:  # Significant ST elevation
+                    abnormality = "st elevation"
+                    is_normal = False
+                else:
+                    is_normal = True
+                    abnormality = "normal"
+                
             # For real-time monitoring, we use the selected ECG type
-            if self.monitoring_active:
+            elif self.monitoring_active:
                 ecg_type = self.ecgTypeCombo.currentText().lower()
                 
                 if "normal" in ecg_type:

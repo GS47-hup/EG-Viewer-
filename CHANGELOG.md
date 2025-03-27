@@ -24,6 +24,21 @@ All notable changes to the ECG Viewer project will be documented in this file.
 - Better handling of noise in real ECG data
 - Improved ST elevation measurement for short signals
 
+## [0.1.9] - 2025-03-30
+
+### Added
+- Real-world ECG data import and visualization functionality
+- Sample selection interface for navigating real-world ECG records
+- Enhanced classification for real-world ECG signals
+- Heart rate detection from R-peaks in real-world data
+- ST elevation detection in real-world samples
+- Automatic feature-based classification of imported signals
+
+### Changed
+- Improved UI with dedicated section for real-world ECG data
+- Enhanced classification algorithm to work with both simulated and real data
+- Better error handling for large data files
+
 ## [0.1.8] - 2025-03-29
 
 ### Added
