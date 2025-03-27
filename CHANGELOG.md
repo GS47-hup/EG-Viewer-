@@ -4,7 +4,7 @@ All notable changes to the ECG Viewer project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.1.6] - 2025-3-27
+## [0.1.6] - 2025-3-28
 
 ### Added
 - Enhanced peak detection algorithm with specialized parameters for synthetic ECG data
