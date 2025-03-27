@@ -233,6 +233,7 @@ class ECGSimulator(QtWidgets.QMainWindow):
         self.monitoring_active = False
         self.recording_active = False
         self.recorded_data = []
+        self.continuous_playback_active = False
         
         # Real-world ECG variables
         self.real_world_data = None
@@ -699,8 +700,28 @@ class ECGSimulator(QtWidgets.QMainWindow):
                 'time': ecg_time,
                 'values': ecg_values,
                 'r_peaks': r_peaks,
-                'heart_rate': heart_rate
+                'heart_rate': heart_rate,
+                'sample_idx': sample_idx
             }
+            
+            # Add looping playback buttons
+            if not hasattr(self, 'playbackButtonsLayout'):
+                # Create playback buttons if they don't exist
+                self.playbackButtonsLayout = QtWidgets.QHBoxLayout()
+                self.playButton = QtWidgets.QPushButton("Play as Continuous")
+                self.playButton.clicked.connect(self.start_continuous_playback)
+                self.stopPlayButton = QtWidgets.QPushButton("Stop Playback")
+                self.stopPlayButton.clicked.connect(self.stop_continuous_playback)
+                self.stopPlayButton.setEnabled(False)
+                
+                self.playbackButtonsLayout.addWidget(self.playButton)
+                self.playbackButtonsLayout.addWidget(self.stopPlayButton)
+                
+                self.realWorldLayout.addLayout(self.playbackButtonsLayout)
+            else:
+                # Just enable the play button
+                self.playButton.setEnabled(True)
+                self.stopPlayButton.setEnabled(False)
             
             # Update UI
             self.sampleInfoLabel.setText(
@@ -716,6 +737,125 @@ class ECGSimulator(QtWidgets.QMainWindow):
             self.statusBar.showMessage(f"Error loading real-world ECG sample: {str(e)}")
             import traceback
             traceback.print_exc()
+            
+    def start_continuous_playback(self):
+        """Start continuous playback of the real-world ECG sample"""
+        if self.current_real_world_sample is None:
+            self.statusBar.showMessage("Error: No real-world ECG sample loaded")
+            return
+        
+        try:
+            # Set up continuous playback variables
+            self.continuous_playback_active = True
+            self.ecg_playback_buffer_time = []
+            self.ecg_playback_buffer_values = []
+            self.playback_sample = self.current_real_world_sample
+            self.playback_position = 0
+            
+            # Clear the canvas for real-time display
+            self.ecg_canvas.clear_plot()
+            
+            # Create or reset the playback timer
+            if hasattr(self, 'playback_timer'):
+                self.playback_timer.stop()
+            
+            self.playback_timer = QtCore.QTimer()
+            self.playback_timer.timeout.connect(self.update_continuous_playback)
+            self.playback_timer.start(20)  # Update at 50 Hz for smooth display
+            
+            # Update UI
+            self.playButton.setEnabled(False)
+            self.stopPlayButton.setEnabled(True)
+            self.loadSampleButton.setEnabled(False)
+            self.sampleSpinBox.setEnabled(False)
+            
+            # Update status
+            self.statusBar.showMessage(f"Playing real-world ECG sample #{self.playback_sample['sample_idx']+1} continuously")
+            
+        except Exception as e:
+            self.statusBar.showMessage(f"Error starting playback: {str(e)}")
+            import traceback
+            traceback.print_exc()
+    
+    def stop_continuous_playback(self):
+        """Stop continuous playback of the real-world ECG sample"""
+        try:
+            # Stop the timer
+            if hasattr(self, 'playback_timer'):
+                self.playback_timer.stop()
+            
+            self.continuous_playback_active = False
+            
+            # Restore the static display
+            if self.playback_sample:
+                self.ecg_canvas.update_plot(
+                    self.playback_sample['time'],
+                    self.playback_sample['values'],
+                    self.playback_sample['r_peaks']
+                )
+            
+            # Update UI
+            self.playButton.setEnabled(True)
+            self.stopPlayButton.setEnabled(False)
+            self.loadSampleButton.setEnabled(True)
+            self.sampleSpinBox.setEnabled(True)
+            
+            # Update status
+            self.statusBar.showMessage("Continuous playback stopped")
+            
+        except Exception as e:
+            self.statusBar.showMessage(f"Error stopping playback: {str(e)}")
+            import traceback
+            traceback.print_exc()
+    
+    def update_continuous_playback(self):
+        """Update the continuous playback display"""
+        if not hasattr(self, 'continuous_playback_active') or not self.continuous_playback_active:
+            return
+        
+        try:
+            sample_values = self.playback_sample['values']
+            sample_time = self.playback_sample['time']
+            total_points = len(sample_values)
+            
+            # Points to add per update (5-10 points for smooth motion)
+            points_to_add = 8
+            
+            # Add points to the display buffer
+            for i in range(points_to_add):
+                self.ecg_playback_buffer_time.append(self.playback_position / self.sampling_rate * 1000)
+                self.ecg_playback_buffer_values.append(sample_values[self.playback_position % total_points])
+                
+                # Move to next position, looping back to start if we reach the end
+                self.playback_position = (self.playback_position + 1) % total_points
+                
+            # Keep buffer to a fixed size (5 seconds of data)
+            max_display_points = 5 * self.sampling_rate
+            if len(self.ecg_playback_buffer_time) > max_display_points:
+                self.ecg_playback_buffer_time = self.ecg_playback_buffer_time[-max_display_points:]
+                self.ecg_playback_buffer_values = self.ecg_playback_buffer_values[-max_display_points:]
+            
+            # Find R-peaks in the display buffer
+            try:
+                r_peaks, _ = signal.find_peaks(
+                    self.ecg_playback_buffer_values,
+                    height=0.5 * max(self.ecg_playback_buffer_values) if self.ecg_playback_buffer_values else 0,
+                    distance=self.sampling_rate * 0.3  # Minimum 300ms between peaks
+                )
+            except Exception as e:
+                print(f"Error detecting R-peaks during playback: {e}")
+                r_peaks = []
+            
+            # Update the display
+            self.ecg_canvas.update_plot(
+                self.ecg_playback_buffer_time, 
+                self.ecg_playback_buffer_values,
+                r_peaks
+            )
+            
+        except Exception as e:
+            print(f"Error during playback update: {str(e)}")
+            self.stop_continuous_playback()
             
     def classify_ecg(self):
         """Classify the current ECG data"""

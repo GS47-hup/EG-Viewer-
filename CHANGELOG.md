@@ -24,6 +24,20 @@ All notable changes to the ECG Viewer project will be documented in this file.
 - Better handling of noise in real ECG data
 - Improved ST elevation measurement for short signals
 
+## [0.1.10] - 2025-03-31
+
+### Added
+- Continuous looping playback for real-world ECG data samples
+- Real-time scrolling display for static ECG samples
+- Play/Stop controls for real-world ECG samples
+- Automatic R-peak detection during continuous playback
+- Seamless looping of ECG signals for realistic monitoring simulation
+
+### Changed
+- Enhanced real-world ECG sample display with continuous playback options
+- Improved visualization with dynamic scrolling window
+- Optimized display buffer management for smooth visualization
+
 ## [0.1.9] - 2025-03-30
 
 ### Added
