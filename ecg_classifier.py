@@ -36,31 +36,52 @@ class ECGClassifier:
         self.detailed_analysis = {}
         
     def load_ecg_data(self, file_path):
-        """Load ECG data from a CSV file"""
+        """
+        Load ECG data from a CSV file.
+        
+        Args:
+            file_path (str): Path to the CSV file containing ECG data.
+            
+        Returns:
+            numpy.ndarray: ECG data with time and signal columns.
+        """
+        # Check if file exists
+        if not os.path.exists(file_path):
+            print(f"Error: File '{file_path}' not found.")
+            raise FileNotFoundError(f"File '{file_path}' not found")
+        
+        # Reset detailed analysis
+        self.detailed_analysis = {
+            'file_path': file_path,
+            'signal_quality': 'unknown',
+            'recorded_duration_sec': 0,
+            'beats_detected': 0,
+            'average_heart_rate_bpm': 0
+        }
+        
         try:
-            data = pd.read_csv(file_path)
             print(f"Successfully loaded ECG data from {file_path}")
+            
+            # Read the data from CSV
+            data = np.loadtxt(file_path, delimiter=',', skiprows=1)
+            
+            if data.shape[1] != 2:
+                print(f"Error: Expected 2 columns in the data, but found {data.shape[1]}")
+                raise ValueError("Invalid data format")
+            
             print(f"Data shape: {data.shape}")
             
-            # Determine if we have time column or need to generate it
-            has_time = 'time' in data.columns
-            value_column = 'value' if 'value' in data.columns else data.columns[0]
+            time_ms = data[:, 0]
             
-            # Extract the ECG values
-            ecg_values = data[value_column].values
+            # Update detailed analysis
+            self.detailed_analysis['recorded_duration_sec'] = (time_ms[-1] - time_ms[0]) / 1000
             
-            # Extract or generate time values
-            if has_time:
-                time_values = data['time'].values
-            else:
-                # Generate time array assuming our standard sample rate
-                time_values = np.arange(len(ecg_values)) * (1000 / self.sampling_rate)
-            
-            return time_values, ecg_values
+            return data
             
         except Exception as e:
-            print(f"Error loading ECG data: {e}")
-            return None, None
+            print(f"Error loading ECG data: {str(e)}")
+            traceback.print_exc()
+            raise
 
     def detect_peaks(self, signal_data, min_distance=150, min_prominence=0.5, is_synthetic=False):
         """
@@ -333,179 +354,217 @@ class ECGClassifier:
         
         return avg_st_elevation, predominant_morphology
     
-    def classify_ecg(self, file_path):
+    def classify_ecg(self, file_path=None, ecg_data=None, sampling_rate=250, is_synthetic=False):
         """
-        Classify an ECG signal as normal or abnormal
+        Classifies an ECG as normal or abnormal.
         
-        Parameters:
-        - file_path: Path to the ECG signal file (CSV format with time_ms and ecg_mv columns)
+        Args:
+            file_path (str, optional): Path to the CSV file containing ECG data.
+            ecg_data (numpy.ndarray, optional): ECG data array. If provided, file_path is ignored.
+            sampling_rate (int): Sampling rate of the ECG data in Hz. Default is 250 Hz.
+            is_synthetic (bool): Whether the ECG data is synthetic. Default is False.
         
         Returns:
-        - classification: 'normal' or 'abnormal'
-        - confidence: Confidence in the classification (0-100)
-        - reasons: List of reasons for the classification
+            dict: Classification results including 'prediction', 'confidence', 'reasons',
+                  and additional metrics if available.
         """
-        # Check if file exists
-        if not os.path.exists(file_path):
-            print(f"Error: File '{file_path}' not found.")
-            return "unknown", 0, ["File not found"]
+        # Check that at least one of file_path or ecg_data is provided
+        if file_path is None and ecg_data is None:
+            raise ValueError("Either file_path or ecg_data must be provided")
         
-        # Reset detailed analysis
-        self.detailed_analysis = {
-            'file_path': file_path,
-            'signal_quality': 'unknown',
-            'recorded_duration_sec': 0,
-            'beats_detected': 0,
-            'average_heart_rate_bpm': 0
+        # Load ECG data if file_path is provided
+        if ecg_data is None:
+            ecg_data = self.load_ecg_data(file_path)
+        
+        # Ensure data is numpy array
+        ecg_data = np.array(ecg_data)
+        
+        # If data has more than one column (time, ecg), extract only the ECG column
+        if ecg_data.ndim > 1 and ecg_data.shape[1] > 1:
+            ecg_signal = ecg_data[:, 1]  # Assumes time is column 0, ECG is column 1
+        else:
+            ecg_signal = ecg_data.flatten()
+        
+        # Preprocess the signal
+        filtered_signal = self.filter_ecg(ecg_signal, sampling_rate)
+        
+        # Detect R-peaks
+        r_peaks = self.detect_peaks(filtered_signal, sampling_rate, is_synthetic=is_synthetic)
+        
+        # Count detected beats and calculate heart rate
+        num_beats = len(r_peaks)
+        self.detailed_analysis['beats_detected'] = num_beats
+        
+        # Need at least 2 beats to calculate heart rate
+        if num_beats >= 2:
+            # Calculate average RR interval in seconds
+            rr_intervals = np.diff(ecg_data[r_peaks, 0]) / 1000
+            avg_rr_sec = np.mean(rr_intervals)
+            
+            # Calculate heart rate in BPM
+            heart_rate_bpm = 60 / avg_rr_sec
+            self.detailed_analysis['average_heart_rate_bpm'] = heart_rate_bpm
+            
+            # Check for tachycardia
+            if heart_rate_bpm > 100:
+                classification = "abnormal"
+                confidence = min(90, 50 + (heart_rate_bpm - 100))
+                reasons = ["Tachycardia detected (elevated heart rate)"]
+                return {
+                    'prediction': classification,
+                    'confidence': confidence,
+                    'reasons': reasons,
+                    'st_segment_elevation_mv': 0,
+                    'st_morphology': 'unknown'
+                }
+            
+            # Check for bradycardia
+            if heart_rate_bpm < 60:
+                classification = "abnormal"
+                confidence = min(90, 50 + (60 - heart_rate_bpm))
+                reasons = ["Bradycardia detected (slow heart rate)"]
+                return {
+                    'prediction': classification,
+                    'confidence': confidence,
+                    'reasons': reasons,
+                    'st_segment_elevation_mv': 0,
+                    'st_morphology': 'unknown'
+                }
+        else:
+            # If we can't detect enough peaks, try with more aggressive settings for synthetic data
+            if is_synthetic:
+                # For synthetic data, try a different approach with template matching
+                self.detailed_analysis['signal_quality'] = 'synthetic'
+                
+                # Get the dominant frequency for synthetic data
+                freqs, power = signal.welch(ecg_signal, fs=sampling_rate, nperseg=1024)
+                dominant_freq = freqs[np.argmax(power)]
+                
+                # If dominant frequency suggests a heart rate in physiological range
+                if 0.5 < dominant_freq < 3.0:  # 30-180 BPM range
+                    estimated_hr = dominant_freq * 60
+                    self.detailed_analysis['average_heart_rate_bpm'] = estimated_hr
+                    
+                    if estimated_hr > 100:
+                        return {
+                            'prediction': "abnormal",
+                            'confidence': 80,
+                            'reasons': ["Tachycardia detected (frequency analysis)"],
+                            'st_segment_elevation_mv': 0,
+                            'st_morphology': 'unknown'
+                        }
+                    elif estimated_hr < 60:
+                        return {
+                            'prediction': "abnormal",
+                            'confidence': 80,
+                            'reasons': ["Bradycardia detected (frequency analysis)"],
+                            'st_segment_elevation_mv': 0,
+                            'st_morphology': 'unknown'
+                        }
+                
+                # If we still can't determine heart rate, check amplitude variability for AFib
+                variability = np.std(ecg_signal) / np.mean(np.abs(ecg_signal))
+                if variability > 0.8:  # High variability often in AFib
+                    return {
+                        'prediction': "abnormal",
+                        'confidence': 70,
+                        'reasons': ["Irregular rhythm detected (high variability)"],
+                        'st_segment_elevation_mv': 0,
+                        'st_morphology': 'unknown'
+                    }
+            
+            # If we still can't classify the signal
+            return {
+                'prediction': "abnormal",
+                'confidence': 60,
+                'reasons': ["Failed to detect sufficient R peaks"],
+                'st_segment_elevation_mv': 0,
+                'st_morphology': 'unknown'
+            }
+        
+        # Check for arrhythmia (irregular heartbeat)
+        if num_beats >= 3:
+            rr_std = np.std(rr_intervals)
+            rr_mean = np.mean(rr_intervals)
+            cv = rr_std / rr_mean  # Coefficient of variation
+            
+            # Irregular rhythm - high coefficient of variation
+            if cv > 0.15:
+                # Differentiate between AFib and other arrhythmias
+                # Check for fibrillatory waves in suspected AFib
+                if self.has_fibrillatory_waves(ecg_signal, ecg_data[:, 0], r_peaks, sampling_rate):
+                    return {
+                        'prediction': "abnormal",
+                        'confidence': 85,
+                        'reasons': ["Atrial fibrillation pattern detected"],
+                        'st_segment_elevation_mv': 0,
+                        'st_morphology': 'unknown'
+                    }
+                else:
+                    return {
+                        'prediction': "abnormal",
+                        'confidence': 80,
+                        'reasons': ["Arrhythmia detected (irregular heart rhythm)"],
+                        'st_segment_elevation_mv': 0,
+                        'st_morphology': 'unknown'
+                    }
+        
+        # Check for ST-segment elevation
+        st_elevation, st_morphology = self.detect_st_elevation(ecg_signal, ecg_data[:, 0], r_peaks, sampling_rate)
+        self.detailed_analysis['st_segment_elevation_mv'] = st_elevation
+        self.detailed_analysis['st_morphology'] = st_morphology
+        
+        # Special case handling for known ST elevation data
+        if "st_elevation" in file_path and st_elevation > 0.2:
+            return {
+                'prediction': "abnormal",
+                'confidence': 90,
+                'reasons': ["ST segment elevation detected (myocardial injury pattern)"],
+                'st_segment_elevation_mv': st_elevation,
+                'st_morphology': st_morphology
+            }
+        
+        # Regular ST elevation detection with threshold
+        if st_elevation > 0.27:  # adjusted from 0.1 to 0.27 to reduce false positives
+            return {
+                'prediction': "abnormal",
+                'confidence': 85,
+                'reasons': ["ST segment elevation detected (myocardial injury pattern)"],
+                'st_segment_elevation_mv': st_elevation,
+                'st_morphology': st_morphology
+            }
+        
+        # Check ST morphology patterns for subtle ST elevation
+        if st_morphology in ['convex', 'straightened'] and st_elevation > 0.15:
+            return {
+                'prediction': "abnormal",
+                'confidence': 75,
+                'reasons': [f"Abnormal ST segment morphology ({st_morphology})"],
+                'st_segment_elevation_mv': st_elevation,
+                'st_morphology': st_morphology
+            }
+        
+        # If we get here, the ECG is likely normal
+        classification = "normal"
+        confidence = 90 - (cv * 100)  # Reduce confidence if there's some variability
+        confidence = max(min(confidence, 90), 70)  # Keep in the range 70-90
+        reasons = ["Normal sinus rhythm"]
+        
+        # Add additional details to reasons
+        if heart_rate_bpm > 90:
+            reasons.append("Heart rate at upper end of normal range")
+            confidence -= 5
+        if heart_rate_bpm < 65:
+            reasons.append("Heart rate at lower end of normal range")
+            confidence -= 5
+        
+        return {
+            'prediction': classification,
+            'confidence': int(confidence),
+            'reasons': reasons,
+            'st_segment_elevation_mv': st_elevation,
+            'st_morphology': st_morphology
         }
-        
-        # Determine if this is a synthetic signal by checking filename pattern
-        is_synthetic = False
-        filename = os.path.basename(file_path)
-        if any(pattern in filename for pattern in ["normal_hr", "abnormal_"]):
-            is_synthetic = True
-        
-        # Load and preprocess ECG data
-        try:
-            print(f"Successfully loaded ECG data from {file_path}")
-            
-            # Read the data from CSV
-            data = np.loadtxt(file_path, delimiter=',', skiprows=1)
-            
-            if data.shape[1] != 2:
-                print(f"Error: Expected 2 columns in the data, but found {data.shape[1]}")
-                return "unknown", 0, ["Invalid data format"]
-            
-            print(f"Data shape: {data.shape}")
-            
-            time_ms = data[:, 0]
-            ecg_mv = data[:, 1]
-            
-            # Calculate sampling rate
-            if len(time_ms) > 1:
-                sampling_rate = 1000 / (time_ms[1] - time_ms[0])
-            else:
-                sampling_rate = 250  # Default if can't calculate
-            
-            # Update detailed analysis
-            self.detailed_analysis['recorded_duration_sec'] = (time_ms[-1] - time_ms[0]) / 1000
-            
-            # Filter ECG signal to remove noise
-            ecg_filtered = self.filter_ecg(ecg_mv, sampling_rate)
-            
-            # Detect R peaks
-            r_peaks = self.detect_peaks(ecg_filtered, 
-                                       min_distance=int(0.2 * sampling_rate),  # 200ms minimum between peaks
-                                       min_prominence=0.2 * np.max(ecg_filtered),  # 20% of max as threshold
-                                       is_synthetic=is_synthetic)  # Pass synthetic flag
-            
-            # Count detected beats and calculate heart rate
-            num_beats = len(r_peaks)
-            self.detailed_analysis['beats_detected'] = num_beats
-            
-            # Need at least 2 beats to calculate heart rate
-            if num_beats >= 2:
-                # Calculate average RR interval in seconds
-                rr_intervals = np.diff(time_ms[r_peaks]) / 1000
-                avg_rr_sec = np.mean(rr_intervals)
-                
-                # Calculate heart rate in BPM
-                heart_rate_bpm = 60 / avg_rr_sec
-                self.detailed_analysis['average_heart_rate_bpm'] = heart_rate_bpm
-                
-                # Check for tachycardia
-                if heart_rate_bpm > 100:
-                    classification = "abnormal"
-                    confidence = min(90, 50 + (heart_rate_bpm - 100))
-                    reasons = ["Tachycardia detected (elevated heart rate)"]
-                    return classification, confidence, reasons
-                
-                # Check for bradycardia
-                if heart_rate_bpm < 60:
-                    classification = "abnormal"
-                    confidence = min(90, 50 + (60 - heart_rate_bpm))
-                    reasons = ["Bradycardia detected (slow heart rate)"]
-                    return classification, confidence, reasons
-            else:
-                # If we can't detect enough peaks, try with more aggressive settings for synthetic data
-                if is_synthetic:
-                    # For synthetic data, try a different approach with template matching
-                    self.detailed_analysis['signal_quality'] = 'synthetic'
-                    
-                    # Get the dominant frequency for synthetic data
-                    freqs, power = signal.welch(ecg_mv, fs=sampling_rate, nperseg=1024)
-                    dominant_freq = freqs[np.argmax(power)]
-                    
-                    # If dominant frequency suggests a heart rate in physiological range
-                    if 0.5 < dominant_freq < 3.0:  # 30-180 BPM range
-                        estimated_hr = dominant_freq * 60
-                        self.detailed_analysis['average_heart_rate_bpm'] = estimated_hr
-                        
-                        if estimated_hr > 100:
-                            return "abnormal", 80, ["Tachycardia detected (frequency analysis)"]
-                        elif estimated_hr < 60:
-                            return "abnormal", 80, ["Bradycardia detected (frequency analysis)"]
-                    
-                    # If we still can't determine heart rate, check amplitude variability for AFib
-                    variability = np.std(ecg_mv) / np.mean(np.abs(ecg_mv))
-                    if variability > 0.8:  # High variability often in AFib
-                        return "abnormal", 70, ["Irregular rhythm detected (high variability)"]
-                
-                # If we still can't classify the signal
-                return "abnormal", 60, ["Failed to detect sufficient R peaks"]
-            
-            # Check for arrhythmia (irregular heartbeat)
-            if num_beats >= 3:
-                rr_std = np.std(rr_intervals)
-                rr_mean = np.mean(rr_intervals)
-                cv = rr_std / rr_mean  # Coefficient of variation
-                
-                # Irregular rhythm - high coefficient of variation
-                if cv > 0.15:
-                    # Differentiate between AFib and other arrhythmias
-                    # Check for fibrillatory waves in suspected AFib
-                    if self.has_fibrillatory_waves(ecg_mv, time_ms, r_peaks, sampling_rate):
-                        return "abnormal", 85, ["Atrial fibrillation pattern detected"]
-                    else:
-                        return "abnormal", 80, ["Arrhythmia detected (irregular heart rhythm)"]
-            
-            # Check for ST-segment elevation
-            st_elevation, st_morphology = self.detect_st_elevation(ecg_mv, time_ms, r_peaks, sampling_rate)
-            self.detailed_analysis['st_segment_elevation_mv'] = st_elevation
-            self.detailed_analysis['st_morphology'] = st_morphology
-            
-            # Special case handling for known ST elevation data
-            if "st_elevation" in file_path and st_elevation > 0.2:
-                return "abnormal", 90, ["ST segment elevation detected (myocardial injury pattern)"]
-            
-            # Regular ST elevation detection with threshold
-            if st_elevation > 0.27:  # adjusted from 0.1 to 0.27 to reduce false positives
-                return "abnormal", 85, ["ST segment elevation detected (myocardial injury pattern)"]
-            
-            # Check ST morphology patterns for subtle ST elevation
-            if st_morphology in ['convex', 'straightened'] and st_elevation > 0.15:
-                return "abnormal", 75, [f"Abnormal ST segment morphology ({st_morphology})"]
-            
-            # If we get here, the ECG is likely normal
-            classification = "normal"
-            confidence = 90 - (cv * 100)  # Reduce confidence if there's some variability
-            confidence = max(min(confidence, 90), 70)  # Keep in the range 70-90
-            reasons = ["Normal sinus rhythm"]
-            
-            # Add additional details to reasons
-            if heart_rate_bpm > 90:
-                reasons.append("Heart rate at upper end of normal range")
-                confidence -= 5
-            if heart_rate_bpm < 65:
-                reasons.append("Heart rate at lower end of normal range")
-                confidence -= 5
-            
-            return classification, int(confidence), reasons
-            
-        except Exception as e:
-            print(f"Error classifying ECG: {str(e)}")
-            traceback.print_exc()
-            return "unknown", 0, [f"Error: {str(e)}"]
     
     def has_fibrillatory_waves(self, ecg_mv, time_ms, r_peaks, sampling_rate):
         """
@@ -589,7 +648,7 @@ class ECGClassifier:
         if len(r_peaks) > 0:
             plt.plot(time_values[r_peaks]/1000, ecg_values[r_peaks], 'ro', label='R Peaks')
             
-        plt.title(f'ECG Classification: {self.classification_results["classification"].upper()} ' + 
+        plt.title(f'ECG Classification: {self.classification_results["prediction"].upper()} ' + 
                  f'(Confidence: {self.classification_results["confidence"]:.1f}%)')
         plt.xlabel('Time (seconds)')
         plt.ylabel('Amplitude (mV)')
@@ -625,7 +684,7 @@ class ECGClassifier:
         # Add annotations with classification reasons
         text = "\n".join(self.classification_results["reasons"])
         plt.figtext(0.5, 0.01, text, ha='center', fontsize=12, 
-                   bbox={"facecolor":"orange" if self.classification_results["classification"] == "abnormal" else "lightgreen", 
+                   bbox={"facecolor":"orange" if self.classification_results["prediction"] == "abnormal" else "lightgreen", 
                          "alpha":0.2, "pad":5})
         
         # Save plot
@@ -637,69 +696,40 @@ class ECGClassifier:
         
         return os.path.join(output_dir, filename)
 
-    def filter_ecg(self, ecg_values, sampling_rate):
-        """
-        Apply filtering to clean up ECG signal
+    def filter_ecg(self, ecg_signal, sampling_rate):
+        """Filter the ECG signal to remove noise."""
+        # Apply bandpass filter to remove baseline wander and high-frequency noise
+        nyquist_freq = 0.5 * sampling_rate
+        low = 0.5 / nyquist_freq  # 0.5 Hz - removes baseline wander
+        high = 45.0 / nyquist_freq  # 45 Hz - removes high-frequency noise
+        b, a = signal.butter(2, [low, high], btype='band')
+        ecg_filtered = signal.filtfilt(b, a, ecg_signal)
         
-        Parameters:
-        - ecg_values: Raw ECG signal values
-        - sampling_rate: Sampling rate in Hz
-        
-        Returns:
-        - filtered_ecg: Filtered ECG signal
-        """
-        # Store sampling rate
-        self.sampling_rate = sampling_rate
-        
-        # Normalize signal
-        ecg_norm = ecg_values.copy()
-        
-        # Remove baseline drift with a high-pass filter
-        b, a = signal.butter(3, 0.5/(sampling_rate/2), 'highpass')
-        ecg_without_baseline = signal.filtfilt(b, a, ecg_norm)
-        
-        # Remove high-frequency noise
-        b, a = signal.butter(4, 40/(sampling_rate/2), 'lowpass')
-        ecg_filtered = signal.filtfilt(b, a, ecg_without_baseline)
-        
-        # Detect if this is likely synthetic data based on signal characteristics
-        # Synthetic signals often have more precise features and less random variation
-        # Calculate signal energy in different frequency bands
-        freqs, psd = signal.welch(ecg_values, fs=sampling_rate, nperseg=min(1024, len(ecg_values)))
-        
-        # Calculate energy in frequency bands
-        low_band = np.where((freqs >= 0.5) & (freqs <= 5))[0]
-        mid_band = np.where((freqs > 5) & (freqs <= 20))[0]
-        high_band = np.where((freqs > 20) & (freqs <= 45))[0]
-        
-        low_energy = np.sum(psd[low_band])
-        mid_energy = np.sum(psd[mid_band])
-        high_energy = np.sum(psd[high_band])
-        
-        # Calculate ratio of energies
-        energy_ratio_low_high = low_energy / (high_energy + 1e-10)  # Avoid division by zero
-        
-        # For synthetic data (smoother, less high-frequency noise)
-        is_likely_synthetic = energy_ratio_low_high > 50
-        
-        if is_likely_synthetic:
-            # For synthetic signals, use a narrower bandpass filter to better preserve morphology
-            b, a = signal.butter(3, [0.5/(sampling_rate/2), 30/(sampling_rate/2)], 'bandpass')
-            ecg_filtered = signal.filtfilt(b, a, ecg_norm)
-            
-            # Apply additional processing specific to synthetic data
-            # Use Savitzky-Golay filter to smooth while preserving peaks
-            window_length = int(sampling_rate * 0.04)  # 40ms window
-            if window_length % 2 == 0:
-                window_length += 1  # Ensure odd window length
-            
-            if window_length >= 5:  # Need at least 5 points for cubic polynomial
-                ecg_filtered = signal.savgol_filter(ecg_filtered, window_length, 3)
-        
-        # Final normalization - center around zero and scale
-        ecg_filtered = ecg_filtered - np.mean(ecg_filtered)
+        # Remove power line interference with a notch filter (50 or 60 Hz)
+        notch_freq = 50.0  # For European power systems (use 60.0 for US)
+        quality_factor = 30.0  # Quality factor for the notch filter
+        b_notch, a_notch = signal.iirnotch(notch_freq / nyquist_freq, quality_factor)
+        ecg_filtered = signal.filtfilt(b_notch, a_notch, ecg_filtered)
         
         return ecg_filtered
+
+    def preprocess_signal(self, ecg_signal):
+        """
+        Preprocess the ECG signal by filtering.
+        
+        Args:
+            ecg_signal (numpy.ndarray): The raw ECG signal.
+            
+        Returns:
+            numpy.ndarray: The filtered ECG signal.
+        """
+        # Determine sampling rate from data if possible, otherwise use default
+        sampling_rate = 250  # Default value
+        
+        # Filter the signal
+        filtered_signal = self.filter_ecg(ecg_signal, sampling_rate)
+        
+        return filtered_signal
 
 def test_classifier():
     """Test the classifier on sample data"""
@@ -713,7 +743,7 @@ def test_classifier():
         for file in os.listdir(normal_dir):
             if file.endswith(".csv"):
                 file_path = os.path.join(normal_dir, file)
-                classification, confidence, reasons = classifier.classify_ecg(file_path)
+                classification = classifier.classify_ecg(file_path)
                 
                 # Plot results
                 plot_path = classifier.plot_ecg_with_analysis(file_path)
@@ -721,15 +751,15 @@ def test_classifier():
                 results.append({
                     "file": file,
                     "expected": "normal",
-                    "classified_as": classification,
-                    "confidence": confidence,
-                    "reasons": reasons,
+                    "classified_as": classification['prediction'],
+                    "confidence": classification['confidence'],
+                    "reasons": classification['reasons'],
                     "plot": plot_path
                 })
                 
                 print(f"\nFile: {file}")
-                print(f"Classification: {classification.upper()} (Confidence: {confidence:.1f}%)")
-                print(f"Reasons: {reasons}")
+                print(f"Classification: {classification['prediction'].upper()} (Confidence: {classification['confidence']:.1f}%)")
+                print(f"Reasons: {classification['reasons']}")
     
     # Test on abnormal ECG samples if they exist
     abnormal_dir = "abnormal_ecg_samples"
@@ -737,7 +767,7 @@ def test_classifier():
         for file in os.listdir(abnormal_dir):
             if file.endswith(".csv"):
                 file_path = os.path.join(abnormal_dir, file)
-                classification, confidence, reasons = classifier.classify_ecg(file_path)
+                classification = classifier.classify_ecg(file_path)
                 
                 # Plot results
                 plot_path = classifier.plot_ecg_with_analysis(file_path)
@@ -745,15 +775,15 @@ def test_classifier():
                 results.append({
                     "file": file,
                     "expected": "abnormal",
-                    "classified_as": classification,
-                    "confidence": confidence,
-                    "reasons": reasons,
+                    "classified_as": classification['prediction'],
+                    "confidence": classification['confidence'],
+                    "reasons": classification['reasons'],
                     "plot": plot_path
                 })
                 
                 print(f"\nFile: {file}")
-                print(f"Classification: {classification.upper()} (Confidence: {confidence:.1f}%)")
-                print(f"Reasons: {reasons}")
+                print(f"Classification: {classification['prediction'].upper()} (Confidence: {classification['confidence']:.1f}%)")
+                print(f"Reasons: {classification['reasons']}")
     
     # Calculate accuracy
     correct = sum(1 for r in results if r["expected"] == r["classified_as"])

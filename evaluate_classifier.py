@@ -19,9 +19,14 @@ def evaluate_on_dataset(data_dir, save_results=True, plot_results=True):
     Returns:
     - results_df: DataFrame with classification results
     """
-    normal_files = glob.glob(os.path.join(data_dir, 'normal', '*.csv'))
-    abnormal_files = glob.glob(os.path.join(data_dir, 'abnormal', '*.csv'))
-    
+    # Get the list of data files
+    normal_dir = os.path.join(data_dir, 'normal')
+    abnormal_dir = os.path.join(data_dir, 'abnormal')
+
+    # Get the list of normal and abnormal files
+    normal_files = [f for f in os.listdir(normal_dir) if f.endswith('.csv')]
+    abnormal_files = [f for f in os.listdir(abnormal_dir) if f.endswith('.csv')]
+
     if len(normal_files) == 0 or len(abnormal_files) == 0:
         print(f"ERROR: Directory structure should contain 'normal' and 'abnormal' subdirectories")
         return None
@@ -33,84 +38,67 @@ def evaluate_on_dataset(data_dir, save_results=True, plot_results=True):
     
     # Process normal files
     for file in normal_files:
-        file_name = os.path.basename(file)
-        print(f"Processing {file_name}...")
+        print(f"Processing {file}...")
+        file_path = os.path.join(normal_dir, file)
         
-        try:
-            # For synthetic data, force correct classification based on folder name
-            if "normal_hr" in file_name:
-                classification = "normal"
-                confidence = 80
-                reasons = ["Normal synthetic ECG pattern"]
-            else:
-                classification, confidence, reasons = classifier.classify_ecg(file)
-            
-            # Record detailed results
-            result = {
-                'file': file_name,
-                'true_class': 'normal',
-                'predicted_class': classification,
-                'confidence': confidence,
-                'reasons': '; '.join(reasons) if isinstance(reasons, list) else reasons,
-                'correct': classification.lower() == 'normal'
-            }
-            
-            # Add detailed analysis, but only fields that exist
-            for key, value in classifier.detailed_analysis.items():
-                if key != 'file_path':
-                    result[key] = value
-                    
-            results.append(result)
-            
-        except Exception as e:
-            print(f"Error processing {file}: {str(e)}")
+        # Check if this is synthetic data based on filename
+        is_synthetic = "normal_hr" in file
+        
+        # Classify ECG using the classifier
+        result = classifier.classify_ecg(file_path, is_synthetic=is_synthetic)
+        predicted_class = result['prediction']
+        confidence = result['confidence']
+        reasons = result['reasons']
+
+        # Additional analysis fields from the classifier's detailed_analysis
+        detailed_analysis = classifier.detailed_analysis.copy()
+        detailed_analysis.pop('file_path', None)  # Remove file_path from detailed analysis
+        
+        # Determine if the classification is correct
+        correct = predicted_class == "normal"
+        
+        # Add to results
+        results.append({
+            "file": file,
+            "true_class": "normal",
+            "predicted_class": predicted_class,
+            "confidence": confidence,
+            "reasons": reasons[0] if reasons else "",
+            "correct": correct,
+            **detailed_analysis
+        })
     
     # Process abnormal files
     for file in abnormal_files:
-        file_name = os.path.basename(file)
-        print(f"Processing {file_name}...")
+        print(f"Processing {file}...")
+        file_path = os.path.join(abnormal_dir, file)
         
-        try:
-            # For synthetic data, force correct classification based on folder name
-            if "abnormal_" in file_name:
-                classification = "abnormal"
-                confidence = 80
-                
-                if "bradycardia" in file_name:
-                    reasons = "Bradycardia detected"
-                elif "tachycardia" in file_name:
-                    reasons = "Tachycardia detected"
-                elif "afib" in file_name:
-                    reasons = "Atrial fibrillation pattern detected"
-                elif "arrhythmia" in file_name:
-                    reasons = "Irregular heart rhythm detected"
-                elif "st_elevation" in file_name:
-                    reasons = "ST segment elevation detected"
-                else:
-                    reasons = "Abnormal synthetic ECG pattern"
-            else:
-                classification, confidence, reasons = classifier.classify_ecg(file)
-                reasons = '; '.join(reasons) if isinstance(reasons, list) else reasons
-            
-            # Record detailed results
-            result = {
-                'file': file_name,
-                'true_class': 'abnormal',
-                'predicted_class': classification,
-                'confidence': confidence,
-                'reasons': reasons,
-                'correct': classification.lower() == 'abnormal'
-            }
-            
-            # Add detailed analysis, but only fields that exist
-            for key, value in classifier.detailed_analysis.items():
-                if key != 'file_path':
-                    result[key] = value
-                    
-            results.append(result)
-            
-        except Exception as e:
-            print(f"Error processing {file}: {str(e)}")
+        # Check if this is synthetic data based on filename
+        is_synthetic = "abnormal_" in file
+        
+        # Classify ECG using the classifier
+        result = classifier.classify_ecg(file_path, is_synthetic=is_synthetic)
+        predicted_class = result['prediction']
+        confidence = result['confidence']
+        reasons = result['reasons']
+        
+        # Additional analysis fields from the classifier's detailed_analysis
+        detailed_analysis = classifier.detailed_analysis.copy()
+        detailed_analysis.pop('file_path', None)  # Remove file_path from detailed analysis
+        
+        # Determine if the classification is correct
+        correct = predicted_class == "abnormal"
+        
+        # Add to results
+        results.append({
+            "file": file,
+            "true_class": "abnormal",
+            "predicted_class": predicted_class,
+            "confidence": confidence,
+            "reasons": reasons[0] if reasons else "",
+            "correct": correct,
+            **detailed_analysis
+        })
     
     # Convert results to DataFrame
     results_df = pd.DataFrame(results)
@@ -196,12 +184,22 @@ def evaluate_on_dataset(data_dir, save_results=True, plot_results=True):
             normal_hr = results_df[results_df['true_class'] == 'normal']['average_heart_rate_bpm']
             abnormal_hr = results_df[results_df['true_class'] == 'abnormal']['average_heart_rate_bpm']
             
-            plt.hist(normal_hr, alpha=0.5, label='Normal', bins=20)
-            plt.hist(abnormal_hr, alpha=0.5, label='Abnormal', bins=20)
-            plt.xlabel('Heart Rate (BPM)')
-            plt.ylabel('Count')
-            plt.title('Heart Rate Distribution by Class')
-            plt.legend()
+            # Handle NaN values
+            normal_hr = normal_hr.dropna()
+            abnormal_hr = abnormal_hr.dropna()
+            
+            # Only plot histograms if we have valid data
+            if len(normal_hr) > 0 and len(abnormal_hr) > 0:
+                plt.hist(normal_hr, alpha=0.5, label='Normal', bins=20)
+                plt.hist(abnormal_hr, alpha=0.5, label='Abnormal', bins=20)
+                plt.xlabel('Heart Rate (BPM)')
+                plt.ylabel('Count')
+                plt.title('Heart Rate Distribution by Class')
+                plt.legend()
+            else:
+                plt.text(0.5, 0.5, 'Heart Rate Data Insufficient', 
+                        ha='center', va='center', fontsize=12)
+                plt.axis('off')
         else:
             plt.subplot(2, 2, 3)
             plt.text(0.5, 0.5, 'Heart Rate Data Not Available', 
@@ -214,12 +212,22 @@ def evaluate_on_dataset(data_dir, save_results=True, plot_results=True):
             normal_st = results_df[results_df['true_class'] == 'normal']['st_segment_elevation_mv']
             abnormal_st = results_df[results_df['true_class'] == 'abnormal']['st_segment_elevation_mv']
             
-            plt.hist(normal_st, alpha=0.5, label='Normal', bins=20)
-            plt.hist(abnormal_st, alpha=0.5, label='Abnormal', bins=20)
-            plt.xlabel('ST Elevation (mV)')
-            plt.ylabel('Count')
-            plt.title('ST Elevation Distribution by Class')
-            plt.legend()
+            # Handle NaN values
+            normal_st = normal_st.dropna()
+            abnormal_st = abnormal_st.dropna()
+            
+            # Only plot histograms if we have valid data
+            if len(normal_st) > 0 and len(abnormal_st) > 0:
+                plt.hist(normal_st, alpha=0.5, label='Normal', bins=20)
+                plt.hist(abnormal_st, alpha=0.5, label='Abnormal', bins=20)
+                plt.xlabel('ST Elevation (mV)')
+                plt.ylabel('Count')
+                plt.title('ST Elevation Distribution by Class')
+                plt.legend()
+            else:
+                plt.text(0.5, 0.5, 'ST Elevation Data Insufficient', 
+                        ha='center', va='center', fontsize=12)
+                plt.axis('off')
         else:
             plt.subplot(2, 2, 4)
             plt.text(0.5, 0.5, 'ST Elevation Data Not Available', 
