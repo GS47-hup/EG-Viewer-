@@ -4,25 +4,45 @@ All notable changes to the ECG Viewer project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.1.7] - 2025-3-29
+## [0.2.0] - 2025-03-27
 
 ### Added
-- Added advanced metrics for arrhythmia detection (pNN50, RMSSD)
-- Implemented irregular irregularity pattern detection for improved AFib diagnosis
-- Added P-wave detection to rule out atrial fibrillation when distinct P waves are present
+- Real ECG data classifier with 97% accuracy on test sets
+- Advanced feature extraction for 140-point ECG data
+- Multiple model evaluation (Random Forest, SVM, Neural Network, etc.)
+- Misclassification analysis tools for model improvement
+- Wavelet transform-based features for better signal characterization
 
 ### Changed
-- Adjusted heart rate thresholds to be context-aware based on data type (synthetic vs real)
-- Added dynamic thresholds that adapt to signal quality and heart rate
-- Enhanced fibrillatory wave detection using multiple frequency bands
-- Improved handling of borderline conditions (borderline bradycardia, tachycardia, mild sinus arrhythmia)
+- Moved from synthetic to real patient ECG data
+- Implemented robust feature engineering pipeline
+- Enhanced visualization tools for ECG signal analysis
+- Improved peak detection algorithms for shorter ECG signals
 
 ### Fixed
-- Reduced false positives by implementing stricter thresholds for synthetic data
-- Fixed initialization of condition flags for consistent behavior
+- Reduced false positives in normal ECG classification
+- Better handling of noise in real ECG data
+- Improved ST elevation measurement for short signals
+
+## [0.1.7] - 2025-03-27
+
+### Added
+- Advanced metrics for arrhythmia detection (pNN50, RMSSD)
+- Irregular irregularity pattern detection for improved AFib diagnosis
+- P-wave detection to distinguish AFib from other arrhythmias
+
+### Changed
+- Adjusted heart rate thresholds to be context-aware
+- Dynamic thresholds now base sensitivity on signal quality
+- Enhanced fibrillatory wave detection with multiple frequency bands
+- Improved handling of borderline conditions
+
+### Fixed
+- Reduced false positives for synthetic data
+- Fixed initialization of condition flags
 - Improved noise handling in arrhythmia detection algorithm
 
-## [0.1.6] - 2025-3-28
+## [0.1.6] - 2025-3-27
 
 ### Added
 - Enhanced peak detection algorithm with specialized parameters for synthetic ECG data
