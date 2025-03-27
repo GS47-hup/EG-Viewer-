@@ -26,38 +26,116 @@ def generate_normal_ecg(file_path, duration_sec=32, sampling_rate=250, heart_rat
     period = 60000.0 / heart_rate  # RR interval in ms
     
     # Add slight variability to heart rate (natural HRV)
-    variability = np.random.normal(0, 0.05 * period, int(num_samples / (period * sampling_rate / 1000)))
+    variability = np.random.normal(0, 0.03 * period, int(num_samples / (period * sampling_rate / 1000)))
     variability_extended = np.interp(time, 
                                     np.linspace(0, duration_sec * 1000, len(variability)), 
                                     variability)
     
-    # Calculate phase
-    phase = (time % (period + variability_extended)) / period * 2 * np.pi
+    # Create empty ECG signal
+    ecg = np.zeros(len(time))
     
-    # Create ECG components
-    p_wave = 0.15 * np.sin(phase)
-    p_wave = np.where((phase >= 0) & (phase <= 0.7 * np.pi), p_wave, 0)
+    # Define waveform templates with more realistic morphology
+    # Use gamma functions for more realistic P and T waves
+    def p_wave_template(x):
+        # Use gamma function for more realistic P wave
+        amplitude = 0.15
+        p_width = 0.08 * period  # P wave width (in ms)
+        beta = 4.0  # Shape parameter
+        # Normalized time from 0 to 1 within the P wave duration
+        x_norm = x / p_width
+        return amplitude * (x_norm ** (beta-1)) * np.exp(-x_norm * beta) * (x_norm <= 1) * 4
     
-    qrs_complex = np.zeros_like(phase)
-    qrs_complex = np.where((phase >= 0.7*np.pi) & (phase <= 0.8*np.pi), -0.5 * np.sin(phase*10), qrs_complex)
-    qrs_complex = np.where((phase >= 0.8*np.pi) & (phase <= 0.9*np.pi), 1.5 * np.sin(phase*10), qrs_complex)
-    qrs_complex = np.where((phase >= 0.9*np.pi) & (phase <= 1.0*np.pi), -0.3 * np.sin(phase*10), qrs_complex)
+    def qrs_complex_template(x):
+        # More realistic QRS complex with distinct Q, R, and S waves
+        q_width = 0.02 * period  # Q wave width
+        r_width = 0.03 * period  # R wave width
+        s_width = 0.02 * period  # S wave width
+        
+        q_amp = -0.2  # Q wave depth
+        r_amp = 1.0   # R wave height
+        s_amp = -0.3  # S wave depth
+        
+        # Q wave (initial downward deflection)
+        q_wave = q_amp * np.exp(-(x ** 2) / (2 * (q_width/5) ** 2)) * (x <= q_width)
+        
+        # R wave (upward deflection)
+        r_wave = r_amp * np.exp(-((x - q_width) ** 2) / (2 * (r_width/3) ** 2)) * ((x > q_width) & (x <= q_width + r_width))
+        
+        # S wave (final downward deflection)
+        s_wave = s_amp * np.exp(-((x - q_width - r_width) ** 2) / (2 * (s_width/3) ** 2)) * (x > q_width + r_width)
+        
+        return q_wave + r_wave + s_wave
     
-    t_wave = 0.3 * np.sin(phase)
-    t_wave = np.where((phase >= 1.0*np.pi) & (phase <= 1.7*np.pi), t_wave, 0)
+    def t_wave_template(x):
+        # Use gamma function for more realistic T wave
+        amplitude = 0.3
+        t_width = 0.16 * period  # T wave width (in ms)
+        beta = 5.5  # Shape parameter - 5.5 gives a nice asymmetric rise and fall
+        # Normalized time from 0 to 1 within the T wave duration
+        x_norm = x / t_width
+        return amplitude * (x_norm ** (beta-1)) * np.exp(-x_norm * beta) * (x_norm <= 1) * 4
     
-    ecg = p_wave + qrs_complex + t_wave
+    # Generate each beat
+    for i, beat_time in enumerate(np.arange(0, duration_sec * 1000, period)):
+        # Add heart rate variability to this beat
+        if i < len(variability):
+            beat_time += variability[i]
+        
+        # Time offsets for each wave
+        p_offset = beat_time - 0.2 * period  # P wave starts before QRS
+        qrs_offset = beat_time              # QRS centered at beat time
+        t_offset = beat_time + 0.05 * period  # T wave after QRS
+        
+        # Generate time arrays relative to each wave's start
+        beat_indices = np.where((time >= beat_time - 0.3 * period) & (time <= beat_time + 0.5 * period))[0]
+        
+        for idx in beat_indices:
+            # P wave
+            if time[idx] >= p_offset and time[idx] < p_offset + 0.11 * period:
+                ecg[idx] += p_wave_template(time[idx] - p_offset)
+            
+            # QRS complex
+            if time[idx] >= qrs_offset - 0.03 * period and time[idx] < qrs_offset + 0.08 * period:
+                ecg[idx] += qrs_complex_template(time[idx] - (qrs_offset - 0.03 * period))
+            
+            # T wave
+            if time[idx] >= t_offset and time[idx] < t_offset + 0.2 * period:
+                ecg[idx] += t_wave_template(time[idx] - t_offset)
     
-    # Add respiratory modulation if requested
+    # Add baseline wander (low frequency drift)
     if respiration_effect:
-        # Simulate respiration at 15 breaths per minute
-        resp_freq = 15 / 60  # Hz
-        resp_modulation = 0.1 * np.sin(2 * np.pi * resp_freq * time / 1000)
-        ecg += resp_modulation
+        # Simulate respiration at about 15-20 breaths per minute
+        resp_freq = random.uniform(0.25, 0.33)  # Hz
+        resp_amp = random.uniform(0.05, 0.15)   # Amplitude
+        baseline_wander = resp_amp * np.sin(2 * np.pi * resp_freq * time / 1000)
+        ecg += baseline_wander
     
-    # Add noise
-    noise = noise_level * np.random.normal(0, 1, len(ecg))
-    ecg += noise
+    # Add more realistic noise patterns
+    # White noise component
+    noise_white = noise_level * 0.5 * np.random.normal(0, 1, len(ecg))
+    
+    # Low frequency noise component (muscle artifact)
+    noise_low = np.zeros(len(ecg))
+    for _ in range(10):  # Add multiple low frequency components
+        freq = random.uniform(0.5, 10)  # Hz
+        amp = noise_level * 0.05 * random.random()
+        phase = random.uniform(0, 2*np.pi)
+        noise_low += amp * np.sin(2*np.pi*freq*time/1000 + phase)
+    
+    # High frequency noise (EMG-like)
+    noise_high = np.zeros(len(ecg))
+    envelope = np.random.normal(0, 1, len(ecg)//50)
+    envelope = np.interp(np.arange(len(ecg)), 
+                          np.linspace(0, len(ecg), len(envelope)), 
+                          envelope)
+    for _ in range(5):
+        freq = random.uniform(40, 100)  # Hz
+        amp = noise_level * 0.03
+        phase = random.uniform(0, 2*np.pi)
+        noise_high += amp * envelope * np.sin(2*np.pi*freq*time/1000 + phase)
+    
+    # Combine all noise components
+    ecg += noise_white + noise_low + noise_high
     
     # Save to CSV
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -77,159 +155,287 @@ def generate_abnormal_ecg(file_path, abnormality='tachycardia', **params):
     """
     if abnormality == 'tachycardia':
         heart_rate = params.get('heart_rate', 120)
+        # Tachycardia often has shortened T-P interval but preserves QRS morphology
         return generate_normal_ecg(file_path, heart_rate=heart_rate, noise_level=0.05)
     
     elif abnormality == 'bradycardia':
         heart_rate = params.get('heart_rate', 45)
+        # Bradycardia often has prolonged T-P interval but normal QRS morphology
         return generate_normal_ecg(file_path, heart_rate=heart_rate, noise_level=0.05)
     
     elif abnormality == 'arrhythmia':
         # Generate irregular heartbeats
         duration_sec = params.get('duration_sec', 32)
         sampling_rate = params.get('sampling_rate', 250)
+        num_samples = duration_sec * sampling_rate
+        time = np.linspace(0, duration_sec * 1000, num_samples)  # Time in ms
+        ecg = np.zeros(len(time))
         
-        # First create a baseline normal ECG
-        time, ecg = generate_normal_ecg(file_path + '.temp', duration_sec=duration_sec, 
-                                        sampling_rate=sampling_rate, heart_rate=75)
-        
-        # Add irregularity to RR intervals
-        num_samples = len(time)
+        # Base heart rate with high variability
+        base_hr = params.get('base_hr', 75)
+        base_period = 60000.0 / base_hr  # ms
         irregularity = params.get('irregularity', 0.3)
         
-        # Detect R peaks in base ECG
-        base_period = 60000.0 / 75  # ms (for 75 BPM)
-        expected_peaks = np.arange(base_period/2, duration_sec*1000, base_period)
-        
-        # Add irregularity to peak positions
-        irregular_peaks = []
-        for peak in expected_peaks:
-            # Skip some beats or add extra beats randomly
-            if random.random() < irregularity * 0.3:
-                if random.random() < 0.5:
-                    # Skip beat
-                    continue
-                else:
-                    # Add extra beat
-                    extra_peak = peak - base_period * random.uniform(0.3, 0.5)
-                    if extra_peak > 0:
-                        irregular_peaks.append(extra_peak)
+        # Generate variable RR intervals
+        rr_intervals = []
+        current_time = 0
+        while current_time < duration_sec * 1000:
+            # Generate next RR interval with irregularity
+            if random.random() < 0.1:  # 10% chance of very irregular beat
+                rr = base_period * random.uniform(0.6, 1.5)
+            else:
+                rr = base_period * random.uniform(1-irregularity, 1+irregularity)
             
-            # Add normal beat with some timing variation
-            jitter = base_period * random.uniform(-irregularity, irregularity)
-            irregular_peaks.append(peak + jitter)
+            rr_intervals.append(rr)
+            current_time += rr
         
-        # Regenerate ECG with irregular peaks
-        ecg_new = np.zeros_like(ecg)
+        beat_times = np.cumsum(rr_intervals)
+        beat_times = beat_times[beat_times < duration_sec * 1000]
         
-        for peak in irregular_peaks:
-            if peak < 0 or peak >= duration_sec*1000:
-                continue
+        # Define wave templates similar to normal ECG but with potential changes
+        def p_wave_template(x, amplitude=0.15):
+            p_width = 0.08 * base_period
+            beta = 4.0
+            x_norm = x / p_width
+            return amplitude * (x_norm ** (beta-1)) * np.exp(-x_norm * beta) * (x_norm <= 1) * 4
+        
+        def qrs_complex_template(x, morphology='normal'):
+            q_width = 0.02 * base_period
+            r_width = 0.03 * base_period
+            s_width = 0.02 * base_period
+            
+            if morphology == 'normal':
+                q_amp = -0.2
+                r_amp = 1.0
+                s_amp = -0.3
+            elif morphology == 'wide':
+                # Wide QRS complex (bundle branch block-like)
+                q_width *= 1.5
+                r_width *= 1.5
+                s_width *= 1.5
+                q_amp = -0.15
+                r_amp = 0.9
+                s_amp = -0.4
+            elif morphology == 'small':
+                # Low voltage QRS
+                q_amp = -0.1
+                r_amp = 0.6
+                s_amp = -0.2
+            
+            q_wave = q_amp * np.exp(-(x ** 2) / (2 * (q_width/5) ** 2)) * (x <= q_width)
+            r_wave = r_amp * np.exp(-((x - q_width) ** 2) / (2 * (r_width/3) ** 2)) * ((x > q_width) & (x <= q_width + r_width))
+            s_wave = s_amp * np.exp(-((x - q_width - r_width) ** 2) / (2 * (s_width/3) ** 2)) * (x > q_width + r_width)
+            
+            return q_wave + r_wave + s_wave
+        
+        def t_wave_template(x, amplitude=0.3, inverted=False):
+            t_width = 0.16 * base_period
+            beta = 5.5
+            x_norm = x / t_width
+            if inverted:
+                amplitude = -amplitude  # Inverted T wave
+            return amplitude * (x_norm ** (beta-1)) * np.exp(-x_norm * beta) * (x_norm <= 1) * 4
+        
+        # Generate each beat with varying morphologies
+        for i, beat_time in enumerate(beat_times):
+            # Decide beat morphology (some abnormal beats)
+            has_p_wave = random.random() > 0.2  # 80% chance of having P wave
+            qrs_morphology = random.choices(
+                ['normal', 'wide', 'small'], 
+                weights=[0.7, 0.2, 0.1], 
+                k=1
+            )[0]
+            t_inverted = random.random() < 0.15  # 15% chance of inverted T wave
+            
+            # Time offsets for each wave
+            p_offset = beat_time - 0.2 * base_period
+            qrs_offset = beat_time
+            t_offset = beat_time + 0.05 * base_period
+            
+            # Generate time arrays relative to each wave's start
+            beat_indices = np.where((time >= beat_time - 0.3 * base_period) & 
+                                   (time <= beat_time + 0.5 * base_period))[0]
+            
+            for idx in beat_indices:
+                # P wave (if present)
+                if has_p_wave and time[idx] >= p_offset and time[idx] < p_offset + 0.11 * base_period:
+                    ecg[idx] += p_wave_template(time[idx] - p_offset)
                 
-            idx = int(peak * sampling_rate / 1000)
-            # Generate QRS complex around this peak
-            if idx - 25 >= 0 and idx + 25 < num_samples:
-                # Create a QRS template - Fixed to length 25 to match the array slices
-                qrs = np.concatenate([
-                    -0.2 * np.ones(5),  # Q wave
-                    np.linspace(-0.2, 1.0, 5),  # Q-R transition
-                    1.0 * np.ones(5),  # R peak
-                    np.linspace(1.0, -0.3, 5),  # R-S transition
-                    -0.3 * np.ones(5)  # S wave
-                ])
-                
-                # P wave
-                if random.random() < 0.7:  # 30% chance of missing P wave
-                    if idx - 25 >= 0:
-                        p_wave = 0.2 * np.sin(np.linspace(0, np.pi, 15))
-                        ecg_new[idx-25:idx-10] += p_wave
-                
-                # QRS - ensure the array slice and QRS array have the same length
-                if idx - 10 >= 0 and idx + 15 < num_samples:
-                    ecg_new[idx-10:idx+15] += qrs
+                # QRS complex
+                if time[idx] >= qrs_offset - 0.03 * base_period and time[idx] < qrs_offset + 0.08 * base_period:
+                    ecg[idx] += qrs_complex_template(time[idx] - (qrs_offset - 0.03 * base_period), 
+                                                   morphology=qrs_morphology)
                 
                 # T wave
-                if idx + 15 < num_samples - 20:
-                    t_wave = 0.3 * np.sin(np.linspace(0, np.pi, 20))
-                    ecg_new[idx+15:idx+35] += t_wave
+                if time[idx] >= t_offset and time[idx] < t_offset + 0.2 * base_period:
+                    ecg[idx] += t_wave_template(time[idx] - t_offset, inverted=t_inverted)
         
         # Add noise
         noise_level = params.get('noise_level', 0.05)
-        noise = noise_level * np.random.normal(0, 1, len(ecg_new))
-        ecg_new += noise
+        noise = noise_level * np.random.normal(0, 1, len(ecg))
+        ecg += noise
         
         # Save to CSV
-        data = np.column_stack((time, ecg_new))
+        data = np.column_stack((time, ecg))
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         np.savetxt(file_path, data, delimiter=',', header='time_ms,ecg_mv', comments='')
-        
-        # Remove temp file
-        if os.path.exists(file_path + '.temp'):
-            os.remove(file_path + '.temp')
             
-        return time, ecg_new
+        return time, ecg
         
     elif abnormality == 'afib':
         # Atrial fibrillation: irregular rhythm, absence of P waves, rapid atrial activity
         duration_sec = params.get('duration_sec', 32)
         sampling_rate = params.get('sampling_rate', 250)
+        num_samples = duration_sec * sampling_rate
+        time = np.linspace(0, duration_sec * 1000, num_samples)
+        ecg = np.zeros(len(time))
         
-        # First generate irregular rhythm like arrhythmia
-        time, ecg = generate_abnormal_ecg(file_path + '.temp', abnormality='arrhythmia', 
-                                        irregularity=0.4, duration_sec=duration_sec, 
-                                        sampling_rate=sampling_rate)
+        # Highly irregular RR intervals (characteristic of AFib)
+        base_hr = params.get('base_hr', 100)  # Often higher in AFib
+        base_period = 60000.0 / base_hr
         
-        # Add rapid atrial fibrillatory waves (f-waves) instead of P waves
-        f_wave_freq = params.get('f_wave_freq', 6)  # Hz
-        f_wave_amp = params.get('f_wave_amp', 0.1)
+        # Generate very irregular RR intervals
+        rr_intervals = []
+        current_time = 0
+        while current_time < duration_sec * 1000:
+            rr = base_period * random.uniform(0.6, 1.4)  # High variability in AFib
+            rr_intervals.append(rr)
+            current_time += rr
         
+        beat_times = np.cumsum(rr_intervals)
+        beat_times = beat_times[beat_times < duration_sec * 1000]
+        
+        # Add fine fibrillatory waves (f-waves) - typical of AFib
+        f_wave_freq = params.get('f_wave_freq', random.uniform(4, 8))  # Hz
+        f_wave_amp = params.get('f_wave_amp', random.uniform(0.05, 0.12))
         f_waves = f_wave_amp * np.sin(2 * np.pi * f_wave_freq * time / 1000)
         
-        # Remove existing P waves by high-pass filtering
-        b, a = signal.butter(3, 0.5/(sampling_rate/2), 'highpass')
-        ecg_filtered = signal.filtfilt(b, a, ecg)
+        # Add baseline undulation to f-waves (makes them more realistic)
+        for i in range(3):
+            mod_freq = random.uniform(0.3, 1.2)
+            mod_amp = random.uniform(0.02, 0.06)
+            f_waves *= 1 + mod_amp * np.sin(2 * np.pi * mod_freq * time / 1000)
         
-        # Add f-waves
-        ecg_new = ecg_filtered + f_waves
+        ecg += f_waves
+        
+        # Define wave templates (no P waves in AFib)
+        def qrs_complex_template(x):
+            q_width = 0.02 * base_period
+            r_width = 0.03 * base_period
+            s_width = 0.02 * base_period
+            
+            q_amp = -0.2
+            r_amp = 1.0
+            s_amp = -0.3
+            
+            q_wave = q_amp * np.exp(-(x ** 2) / (2 * (q_width/5) ** 2)) * (x <= q_width)
+            r_wave = r_amp * np.exp(-((x - q_width) ** 2) / (2 * (r_width/3) ** 2)) * ((x > q_width) & (x <= q_width + r_width))
+            s_wave = s_amp * np.exp(-((x - q_width - r_width) ** 2) / (2 * (s_width/3) ** 2)) * (x > q_width + r_width)
+            
+            return q_wave + r_wave + s_wave
+        
+        def t_wave_template(x):
+            t_width = 0.16 * base_period
+            beta = 5.5
+            x_norm = x / t_width
+            return 0.3 * (x_norm ** (beta-1)) * np.exp(-x_norm * beta) * (x_norm <= 1) * 4
+        
+        # Generate each beat with no P waves (typical of AFib)
+        for beat_time in beat_times:
+            qrs_offset = beat_time
+            t_offset = beat_time + 0.05 * base_period
+            
+            beat_indices = np.where((time >= beat_time - 0.03 * base_period) & 
+                                  (time <= beat_time + 0.5 * base_period))[0]
+            
+            for idx in beat_indices:
+                # QRS complex
+                if time[idx] >= qrs_offset - 0.03 * base_period and time[idx] < qrs_offset + 0.08 * base_period:
+                    ecg[idx] += qrs_complex_template(time[idx] - (qrs_offset - 0.03 * base_period))
+                
+                # T wave
+                if time[idx] >= t_offset and time[idx] < t_offset + 0.2 * base_period:
+                    ecg[idx] += t_wave_template(time[idx] - t_offset)
+        
+        # Add noise
+        noise_level = params.get('noise_level', 0.05)
+        noise = noise_level * np.random.normal(0, 1, len(ecg))
+        ecg += noise
         
         # Save to CSV
-        data = np.column_stack((time, ecg_new))
+        data = np.column_stack((time, ecg))
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         np.savetxt(file_path, data, delimiter=',', header='time_ms,ecg_mv', comments='')
-        
-        # Remove temp file
-        if os.path.exists(file_path + '.temp'):
-            os.remove(file_path + '.temp')
             
-        return time, ecg_new
+        return time, ecg
         
     elif abnormality == 'st_elevation':
         # Generate normal ECG first
         heart_rate = params.get('heart_rate', 80)
-        time, ecg = generate_normal_ecg(file_path + '.temp', heart_rate=heart_rate)
+        time, ecg = generate_normal_ecg(file_path + '.temp', heart_rate=heart_rate, 
+                                      noise_level=0.03)  # Less noise to see ST changes clearly
         
-        # Add ST segment elevation
-        elevation = params.get('elevation', 0.2)  # in mV
+        # Define ST segment elevation more clearly
+        elevation = params.get('elevation', random.uniform(0.2, 0.4))  # in mV
         duration_sec = len(time) / (params.get('sampling_rate', 250))
         
-        # Detect approximate locations of QRS complexes
+        # Calculate beat locations
         period = 60000.0 / heart_rate  # in ms
-        r_peaks = np.arange(period/2, duration_sec*1000, period)
+        beat_times = np.arange(period/2, duration_sec*1000, period)
         
-        # Add elevation to ST segments
-        for peak in r_peaks:
-            peak_idx = int(peak * params.get('sampling_rate', 250) / 1000)
-            if peak_idx + 50 < len(ecg):
-                # Apply elevation to the ST segment (after QRS)
-                st_start = peak_idx + 15
-                st_end = peak_idx + 50
+        # Apply ST elevation to all beats
+        for beat_time in beat_times:
+            peak_idx = int(beat_time * params.get('sampling_rate', 250) / 1000)
+            
+            # Create window for ST segment (starts after S wave, ends before T wave)
+            if peak_idx + 60 < len(ecg):
+                # Identify start and end of ST segment
+                st_start = peak_idx + 20  # ~80ms after R peak (after S wave)
+                st_end = peak_idx + 60    # ~240ms after R peak (before T wave peak)
                 
-                # Create smooth elevation profile
-                elevation_profile = np.zeros(st_end - st_start)
-                elevation_profile[:10] = np.linspace(0, elevation, 10)  # Ramp up
-                elevation_profile[10:-10] = elevation  # Plateau
-                elevation_profile[-10:] = np.linspace(elevation, 0, 10)  # Ramp down
+                # Create smooth elevation profile with realistic morphology
+                st_length = st_end - st_start
                 
-                ecg[st_start:st_end] += elevation_profile
+                # Create a concave/convex ST elevation pattern (characteristic of STEMI)
+                x = np.linspace(0, 1, st_length)
+                
+                # Choose between different ST morphologies
+                st_morphology = random.choice(['convex', 'straight', 'concave'])
+                
+                if st_morphology == 'convex':
+                    # Convex upward (classic STEMI pattern)
+                    st_shape = elevation * (1 - (2*x-1)**2)
+                elif st_morphology == 'straight':
+                    # Straight elevation
+                    st_shape = np.ones(st_length) * elevation
+                else:  # concave
+                    # Concave upward
+                    st_shape = elevation * np.sqrt(1 - (2*x-1)**2)
+                
+                # Apply the elevation with smooth transitions
+                st_shape[:5] = st_shape[0] * np.linspace(0, 1, 5)  # Smooth start
+                st_shape[-5:] = st_shape[-1] * np.linspace(1, 0.8, 5)  # Smooth end
+                
+                ecg[st_start:st_end] += st_shape
+                
+                # Optionally make the T wave more prominent and possibly inverted
+                # as these patterns can accompany ST elevation in myocardial infarction
+                if random.random() < 0.5:  # 50% chance of T wave changes
+                    t_start = st_end
+                    t_end = min(t_start + 40, len(ecg))
+                    t_peak = t_start + (t_end - t_start) // 2
+                    
+                    if random.random() < 0.3:  # 30% chance of T inversion
+                        # Create inverted T wave
+                        t_amp = -0.3
+                    else:
+                        # Create tall T wave
+                        t_amp = 0.5
+                    
+                    # Create T wave
+                    x = np.linspace(-1, 1, t_end - t_start)
+                    t_wave = t_amp * (1 - x**2)
+                    ecg[t_start:t_end] = t_wave  # Replace the existing T wave
         
         # Save to CSV
         data = np.column_stack((time, ecg))
