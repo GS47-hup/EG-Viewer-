@@ -24,7 +24,26 @@ All notable changes to the ECG Viewer project will be documented in this file.
 - Better handling of noise in real ECG data
 - Improved ST elevation measurement for short signals
 
-## [0.1.7] - 2025-03-27
+## [0.1.8] - 2025-03-29
+
+### Added
+- Real-time ECG simulation with continuous streaming display
+- Simulated sensor data for different ECG patterns (Normal, AFib, ST Elevation, etc.)
+- Live heart rate calculation from R-peak detection
+- Adjustable noise level and heart rate parameters
+- Recording functionality to save simulated ECG sessions
+- Dynamic waveform generation for various cardiac conditions
+
+### Changed
+- Redesigned UI with real-time monitoring controls
+- Improved classification feedback with condition-specific analysis
+- Enhanced visualization with automatic scrolling display
+
+### Fixed
+- Improved R-peak detection algorithm for noisy signals
+- Fixed memory management for long monitoring sessions
+
+## [0.1.7] - 2025-03-28
 
 ### Added
 - Advanced metrics for arrhythmia detection (pNN50, RMSSD)
