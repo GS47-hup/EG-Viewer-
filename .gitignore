@@ -1,0 +1,50 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual Environments
+venv/
+env/
+ENV/
+
+# Local development settings
+.env
+.venv
+
+# Generated ECG data and images
+normal_ecg_samples/
+abnormal_ecg_samples/
+classification_results/
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+*.swp
+*.bin
+*.spec
+profile/
+ecg_viewer_build/
+dev_profile/
+old_builds/
+*.code-workspace
+ECG*.png
+*.csv
+export/
