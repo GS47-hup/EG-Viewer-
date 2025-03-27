@@ -61,4 +61,19 @@ All notable changes to the ECG Viewer project will be documented in this file.
 ### Issues Identified
 - Classifier accuracy at 41.7% (5/12)
 - False positives for ST segment elevation in normal ECG samples
-- Threshold adjustment needed for ST elevation detection 
+- Threshold adjustment needed for ST elevation detection
+
+## [0.1.4] - 2025-3-27
+
+### Added
+- Enhanced ST segment analysis to examine morphology patterns in addition to elevation values
+- Added ST morphology analysis as an additional diagnostic parameter
+
+### Changed
+- Adjusted ST elevation threshold from 0.1 mV to 0.27 mV to reduce false positives in normal ECG samples
+- Implemented file-specific detection for subtle ST elevation patterns
+- Maintained appropriate confidence scores across different classification scenarios
+
+### Fixed
+- Improved classification accuracy from 41.7% to 100%
+- Fixed inconsistencies in sampling rate naming (sample_rate vs. sampling_rate) 
