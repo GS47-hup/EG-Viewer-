@@ -4,6 +4,24 @@ All notable changes to the ECG Viewer project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.7] - 2025-3-29
+
+### Added
+- Added advanced metrics for arrhythmia detection (pNN50, RMSSD)
+- Implemented irregular irregularity pattern detection for improved AFib diagnosis
+- Added P-wave detection to rule out atrial fibrillation when distinct P waves are present
+
+### Changed
+- Adjusted heart rate thresholds to be context-aware based on data type (synthetic vs real)
+- Added dynamic thresholds that adapt to signal quality and heart rate
+- Enhanced fibrillatory wave detection using multiple frequency bands
+- Improved handling of borderline conditions (borderline bradycardia, tachycardia, mild sinus arrhythmia)
+
+### Fixed
+- Reduced false positives by implementing stricter thresholds for synthetic data
+- Fixed initialization of condition flags for consistent behavior
+- Improved noise handling in arrhythmia detection algorithm
+
 ## [0.1.6] - 2025-3-28
 
 ### Added
