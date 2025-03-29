@@ -83,16 +83,24 @@ class ECGSimulator(QtWidgets.QMainWindow):
         
         # Set up the window
         self.setWindowTitle("Real-Time ECG Simulator")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1200, 800)
         
         # Set up central widget and main layout
         self.centralWidget = QtWidgets.QWidget()
         self.setCentralWidget(self.centralWidget)
-        self.mainLayout = QtWidgets.QVBoxLayout(self.centralWidget)
+        self.mainLayout = QtWidgets.QHBoxLayout(self.centralWidget)  # Change to horizontal layout
+        
+        # Create left panel for controls
+        self.leftPanel = QtWidgets.QWidget()
+        self.leftPanelLayout = QtWidgets.QVBoxLayout(self.leftPanel)
+        
+        # Create right panel for ECG display
+        self.rightPanel = QtWidgets.QWidget() 
+        self.rightPanelLayout = QtWidgets.QVBoxLayout(self.rightPanel)
         
         # Create ECG canvas
-        self.ecg_canvas = ECGCanvas(self.centralWidget, width=8, height=4)
-        self.mainLayout.addWidget(self.ecg_canvas)
+        self.ecg_canvas = ECGCanvas(self.rightPanel, width=8, height=4)
+        self.rightPanelLayout.addWidget(self.ecg_canvas)
         
         # Create control panel
         self.controlPanel = QtWidgets.QGroupBox("ECG Controls")
@@ -213,14 +221,6 @@ class ECGSimulator(QtWidgets.QMainWindow):
         # Add the real-world group to the main control layout
         self.controlLayout.addWidget(self.realWorldGroup)
         
-        # Add status bar
-        self.statusBar = QtWidgets.QStatusBar()
-        self.setStatusBar(self.statusBar)
-        self.statusBar.showMessage("Ready to monitor ECG")
-        
-        # Add control panel to main layout
-        self.mainLayout.addWidget(self.controlPanel)
-        
         # Load button for backward compatibility
         self.loadLayout = QtWidgets.QHBoxLayout()
         self.loadLabel = QtWidgets.QLabel("Previous Mode:")
@@ -235,6 +235,23 @@ class ECGSimulator(QtWidgets.QMainWindow):
         self.loadLayout.addWidget(self.loadAbnormalButton)
         
         self.controlLayout.addLayout(self.loadLayout)
+        
+        # Add status bar
+        self.statusBar = QtWidgets.QStatusBar()
+        self.setStatusBar(self.statusBar)
+        self.statusBar.showMessage("Ready to monitor ECG")
+        
+        # Add control panel to left panel
+        self.leftPanelLayout.addWidget(self.controlPanel)
+        
+        # Add ML Model status label
+        self.mlStatusLabel = QtWidgets.QLabel("ML Model 2.0: Ready")
+        self.mlStatusLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.rightPanelLayout.addWidget(self.mlStatusLabel)
+        
+        # Add the panels to the main layout
+        self.mainLayout.addWidget(self.leftPanel, 1)  # 1/3 of width
+        self.mainLayout.addWidget(self.rightPanel, 2) # 2/3 of width
         
         # Initialize simulation variables
         self.ecg_file = 'Real ECG.csv'

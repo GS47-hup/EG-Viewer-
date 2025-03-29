@@ -26,6 +26,22 @@ class MLClassifierUI:
         self.parent = parent_app
         self.ml_classifier = MLClassifier()
         self.ml_enabled = False
+        self.model_path = "ECG-Arrhythmia-Classifier-main/notebooks/model.pkl"
+        self.model = None
+        self.classes = ["Normal", "Abnormal", "Atrial Fibrillation", "ST Elevation", "Bradycardia", "Tachycardia"]
+        
+        # Load ML model
+        self.load_model()
+        
+        # Update parent's ML status label if available
+        if hasattr(parent_app, 'mlStatusLabel'):
+            if self.model is not None:
+                parent_app.mlStatusLabel.setText("ML Model 2.0: Ready")
+                parent_app.mlStatusLabel.setStyleSheet("color: green;")
+            else:
+                parent_app.mlStatusLabel.setText("ML Model 2.0: Not Available")
+                parent_app.mlStatusLabel.setStyleSheet("color: red;")
+        
         self.setup_ui()
     
     def setup_ui(self):
@@ -85,22 +101,22 @@ class MLClassifierUI:
         # Initially hide the ML results
         self.ml_results_group.setVisible(False)
         
-        # Add the toggle button and results area to the parent UI
-        # This assumes the parent has a suitable layout to add these to
-        # If the actual UI structure is different, this would need to be adjusted
+        # Add to the parent's appropriate layout
         try:
-            # Try to add to the parent's existing layout
-            # This is a placeholder and should be updated based on the actual UI structure
-            if hasattr(self.parent, 'button_classify') and self.parent.button_classify is not None:
-                # If there's a classify button, add our toggle near it
-                parent_layout = self.parent.button_classify.parent().layout()
+            if hasattr(self.parent, 'leftPanelLayout'):
+                # Add to the left panel if it exists in the new layout
+                self.parent.leftPanelLayout.addWidget(self.ml_toggle_button)
+                self.parent.leftPanelLayout.addWidget(self.ml_results_group)
+            elif hasattr(self.parent, 'button_ml_classify'):
+                # If we have the ML classify button, add next to it
+                parent_layout = self.parent.button_ml_classify.parent().layout()
                 if parent_layout is not None:
                     parent_layout.addWidget(self.ml_toggle_button)
                     parent_layout.addWidget(self.ml_results_group)
-            elif hasattr(self.parent, 'layout'):
-                # Fallback to adding to the main layout
-                self.parent.layout().addWidget(self.ml_toggle_button)
-                self.parent.layout().addWidget(self.ml_results_group)
+            else:
+                # Fallback to adding to the main control layout
+                self.parent.controlLayout.addWidget(self.ml_toggle_button)
+                self.parent.controlLayout.addWidget(self.ml_results_group)
         except Exception as e:
             print(f"Error adding ML UI elements: {e}")
             print("You may need to manually add these UI elements to your ECG-Viewer.")
@@ -113,10 +129,20 @@ class MLClassifierUI:
             self.ml_toggle_button.setText("ML Model 2.0: On")
             self.ml_results_group.setVisible(True)
             print("Advanced ML Model 2.0 enabled")
+            
+            # Update status label if available
+            if hasattr(self.parent, 'mlStatusLabel'):
+                self.parent.mlStatusLabel.setText("ML Model 2.0: Active")
+                self.parent.mlStatusLabel.setStyleSheet("color: green; font-weight: bold;")
         else:
             self.ml_toggle_button.setText("ML Model 2.0: Off")
             self.ml_results_group.setVisible(False)
             print("Advanced ML Model 2.0 disabled")
+            
+            # Update status label if available
+            if hasattr(self.parent, 'mlStatusLabel'):
+                self.parent.mlStatusLabel.setText("ML Model 2.0: Ready")
+                self.parent.mlStatusLabel.setStyleSheet("color: black;")
     
     def classify_current_ecg(self, ecg_values, time_values=None):
         """
@@ -171,6 +197,10 @@ class MLClassifierUI:
             self.ml_class_label.setText(f"Class: Error")
             self.ml_confidence_label.setText(f"Error: {result.get('error', 'Unknown error')}")
 
+    def load_model(self):
+        """Load the ML model"""
+        self.model = self.ml_classifier.load_model(self.model_path)
+    
 
 # Example usage - this would be called from the main ECG-Viewer app
 if __name__ == "__main__":
