@@ -1,43 +1,177 @@
-<img src="icon/icon.png" width="128" height="128" align=left> 
+# ECG Viewer Project
 
-# ECG Viewer
+## Overview
+The ECG Viewer is a comprehensive electrocardiogram (ECG) visualization, simulation, and analysis tool for healthcare professionals and researchers.
 
-A cross-platform graphical front-end for the 'ECG Reader' sensor. The program displays real-time ECG data sourced from the Arduino-based sensor, along with deriving a heart-rate and exporting of data as a PNG, CSV or RAW. 
+## Features
 
-### **WARNING**: This program is for educational purposes only. NOT FOR MEDICAL USE!
+### Visualization
+- Real-time ECG signal display with dynamic waveform rendering
+- Automatic R-peak detection and heart rate calculation
+- Multiple visualization modes (static, scrolling, continuous)
 
+### Simulation
+- Generation of synthetic ECG patterns for different cardiac conditions
+- Adjustable parameters (heart rate, noise level)
+- Customizable waveform morphology
 
+### Real-world Data Integration
+- Import and visualization of real ECG recordings
+- Continuous playback of static ECG samples
+- Sample selection interface for navigating multiple records
 
-## Version 2.0.0 Changes
-<ul>
-  <li>Capture speed is +200% faster.</li>
-  <li>More graph export options.</li>
-  <li>Graph framerate options to help with slower computers.</li>
-  <li>Cleaner and more stable codebase.</li>
-  <li>Updated Arduino sketch (v2.0.0)</li>
-</ul>
-Note: The Arduino sketch from Version 1.x.x is no longer compatible with the ECG Viewer program. The 2.0.0 version of the sketch will need to be uploaded to the Arduino (see folder: arduino_ecg/).
+### Analysis and Classification
+- Automated ECG interpretation with abnormality detection
+- Classification of cardiac conditions (AFib, ST elevation, etc.)
+- Detailed analysis reports
 
-## Notes on binaries:
-The binaries distributed under releases are not signed. Certain versions of Windows and MacOS may prevent this program from running. The binaries are statically linked and shouldn't require any further configuration to run. 
+## Getting Started
 
-The program DOES NOT contain drivers for Arduino. You may need to install an FTDI driver if your computer doesn't already have one installed. 
+### Installation
+1. Clone the repository
+2. Ensure dependencies are installed (PyQt5, numpy, pandas, matplotlib, scipy)
+3. Run the application:
+   ```
+   python standalone_ecg_simulator.py
+   ```
 
+### Using the Application
+- Use "Start Monitoring" to begin real-time ECG simulation
+- Select ECG type from the dropdown menu
+- Adjust heart rate and noise levels using sliders
+- Click "Classify ECG" to perform automated interpretation
+- Use "Load Real-World ECG" to import and visualize real ECG data
+- With real-world data loaded, use "Play as Continuous" for real-time scrolling display
 
-## Building from source:
+## Evaluating Classifier Performance
 
-Note: Python 3.9 will need to be installed (Python 3.10 may also work, but has not been thoroughly tested with the prerequisite libraries). **When installing Python, make sure the ‘Add Python 3.x to PATH’ option is selected during the Windows install.**
+To evaluate the performance of our current ECG classifier, use the evaluation script:
 
-#### Windows:
-Two scripts are provided to build the program, make.bat and make_ve_build.bat. make.bat will generate the binary normally, without a virtual environment. make_ve_build.bat will generate a binary using a virtual environment, which can later be removed. Depending on your system configuration, Windows may block the execution of batch scripts for security reasons. However, you should be presented with an option to ‘Run Anyways’. You can execute the batch script by either double-clicking on the batch file or executing it from the command/powershell window. 
+```
+python evaluate_current_classifier.py
+```
 
-#### MacOS / Linux:
-The ‘make’ command will need to be installed. Open a terminal window, type ‘make’, and press enter. You should be prompted to install the development tools from Apple. Once it’s installed, navigate the terminal to the ecg_viewer git directory. Once in the folder, using the command ‘make’ will automatically install the prerequisites, build the user-interface, and compile the executable to the dist/ directory. 
+This script provides:
+- Performance metrics (accuracy, precision, recall, F1 score)
+- Confusion matrix visualization
+- Classification report
+- Distribution of confidence scores and classification reasons
 
+The evaluation can be performed on:
+1. Real-world ECG data with manual labeling
+2. Pre-labeled datasets
+3. Synthetic test data
 
-## Screenshots
-![windows10](https://user-images.githubusercontent.com/64606561/185225516-5170e257-abee-42b6-94be-5fef80a741ec.png)
-![macos](https://user-images.githubusercontent.com/64606561/185225535-6c0dd537-25da-4677-a7ae-2ce6710792fb.png)
-![linux](https://user-images.githubusercontent.com/64606561/185225538-dc4175d9-f8cb-4137-9f28-687ec8bc5c2d.png)
+## Future Enhancements
 
+### Machine Learning Integration
+We are working on integrating machine learning-based classification using pre-trained models from repositories like [ECG-Arrhythmia-Classifier](https://github.com/Tobai24/ECG-Arrhythmia-Classifier). This will enhance our classification accuracy and provide more advanced arrhythmia detection capabilities.
 
+### Multi-lead ECG Support
+Future versions will support 12-lead ECG visualization and analysis.
+
+### Clinical Decision Support
+Enhanced integration with medical knowledge bases and treatment recommendation systems.
+
+## ECG Simulator
+
+A standalone ECG (Electrocardiogram) visualization and simulation tool that allows viewing and analysis of ECG signals.
+
+## Features
+
+- Load and visualize real or synthetic ECG data
+- Interactive ECG signal display with R-peak detection
+- Real-time ECG signal simulation with adjustable speed
+- Classification of ECG signals as normal or abnormal
+- Generate synthetic ECG data for testing (normal ECG, atrial fibrillation, ST elevation)
+
+## Requirements
+
+- Python 3.7+
+- Dependencies:
+  - NumPy
+  - Pandas
+  - Matplotlib
+  - PyQt5
+  - SciPy
+
+## Installation
+
+1. Clone this repository or download the source code
+2. Install required dependencies:
+
+```
+pip install numpy pandas matplotlib PyQt5 scipy
+```
+
+## Usage
+
+### Generating Sample ECG Data
+
+The `sample_data_generator.py` script creates synthetic ECG data for testing the simulator:
+
+```
+python sample_data_generator.py
+```
+
+This will:
+- Generate a full dataset with 140 normal and 50 abnormal ECG samples in `data/synthetic_ecg.csv`
+- Generate a small test dataset with 20 normal and 10 abnormal samples in `Real ECG.csv`
+- Create visual examples of the different ECG types in `sample_plots/sample_ecgs.png`
+
+### Running the ECG Simulator
+
+To launch the ECG simulator:
+
+```
+python standalone_ecg_simulator.py
+```
+
+The simulator will:
+- Look for the `Real ECG.csv` file by default to load ECG samples
+- If the file is not found, it will prompt you to select an ECG file
+- Allow you to load normal, abnormal, or random ECG samples
+- Enable real-time simulation of the ECG signal with adjustable speed
+- Provide an option to classify the current ECG signal
+
+## Simulator Controls
+
+- **Load Normal ECG**: Loads a random normal ECG sample
+- **Load Abnormal ECG**: Loads a random abnormal ECG sample
+- **Load Random ECG**: Loads any random ECG sample
+- **Start Simulation**: Begins real-time simulation of the loaded ECG
+- **Stop Simulation**: Stops the current simulation
+- **Simulation Speed**: Adjusts the playback speed of the simulation
+- **Classify ECG**: Performs classification on the current ECG sample
+
+## ECG Data Format
+
+The ECG data is expected to be in CSV format:
+- Multiple columns of ECG data points
+- The last column contains the class label (0 for normal, 1 for abnormal)
+
+## Synthetic ECG Types
+
+The sample data generator can create three types of ECG patterns:
+
+1. **Normal ECG**: Regular heart rhythm with normal P, QRS, and T waves
+2. **Atrial Fibrillation ECG**: Irregular heart rhythm, absence of P waves, and fibrillatory waves
+3. **ST Elevation ECG**: Normal rhythm with elevated ST segment, indicative of myocardial infarction
+
+## Customization
+
+You can customize the sample data generation by modifying the parameters in `sample_data_generator.py`:
+- Number of samples to generate
+- Duration of each ECG recording
+- Sampling rate
+- Heart rate ranges
+- Noise levels
+- ST elevation amount (for abnormal samples)
+
+## License
+
+This project is open-source and free to use for educational and research purposes.
+
+## Acknowledgments
+
+This simulator was designed for educational purposes to help understand ECG signal processing and analysis. 
