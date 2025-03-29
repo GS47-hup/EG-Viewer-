@@ -36,8 +36,12 @@ class MLClassifierUI:
         # Update parent's ML status label if available
         if hasattr(parent_app, 'mlStatusLabel'):
             if self.model is not None:
-                parent_app.mlStatusLabel.setText("ML Model 2.0: Ready")
-                parent_app.mlStatusLabel.setStyleSheet("color: green;")
+                if self.ml_classifier.use_dummy_model:
+                    parent_app.mlStatusLabel.setText("ML Model 2.0: Demo Mode")
+                    parent_app.mlStatusLabel.setStyleSheet("color: orange;")
+                else:
+                    parent_app.mlStatusLabel.setText("ML Model 2.0: Ready")
+                    parent_app.mlStatusLabel.setStyleSheet("color: green;")
             else:
                 parent_app.mlStatusLabel.setText("ML Model 2.0: Not Available")
                 parent_app.mlStatusLabel.setStyleSheet("color: red;")
@@ -48,7 +52,12 @@ class MLClassifierUI:
         """Add ML classifier UI elements to the ECG-Viewer"""
         
         # Create a toggle button for ML classifier
-        self.ml_toggle_button = QtWidgets.QPushButton("ML Model 2.0: Off")
+        if self.ml_classifier.use_dummy_model:
+            button_text = "ML Model 2.0 (Demo): Off"
+        else:
+            button_text = "ML Model 2.0: Off"
+            
+        self.ml_toggle_button = QtWidgets.QPushButton(button_text)
         self.ml_toggle_button.setCheckable(True)
         self.ml_toggle_button.setChecked(False)
         self.ml_toggle_button.setToolTip("Toggle between rule-based and advanced ML-based ECG classification (Model 2.0)")
@@ -59,7 +68,12 @@ class MLClassifierUI:
         self.ml_results_layout = QtWidgets.QVBoxLayout()
         
         # Add a label to indicate this is the advanced ML model
-        self.ml_version_label = QtWidgets.QLabel("Advanced Machine Learning Model (98.8% accuracy)")
+        if self.ml_classifier.use_dummy_model:
+            model_description = "Advanced Machine Learning Model DEMO (for demonstration purposes)"
+        else:
+            model_description = "Advanced Machine Learning Model (98.8% accuracy)"
+            
+        self.ml_version_label = QtWidgets.QLabel(model_description)
         font = self.ml_version_label.font()
         font.setBold(True)
         self.ml_version_label.setFont(font)
@@ -138,23 +152,39 @@ class MLClassifierUI:
         self.ml_enabled = checked
         
         if checked:
-            self.ml_toggle_button.setText("ML Model 2.0: On")
+            if self.ml_classifier.use_dummy_model:
+                self.ml_toggle_button.setText("ML Model 2.0 (Demo): On")
+            else:
+                self.ml_toggle_button.setText("ML Model 2.0: On")
+                
             self.ml_results_group.setVisible(True)
             print("Advanced ML Model 2.0 enabled")
             
             # Update status label if available
             if hasattr(self.parent, 'mlStatusLabel'):
-                self.parent.mlStatusLabel.setText("ML Model 2.0: Active")
-                self.parent.mlStatusLabel.setStyleSheet("color: green; font-weight: bold;")
+                if self.ml_classifier.use_dummy_model:
+                    self.parent.mlStatusLabel.setText("ML Model 2.0: Demo Active")
+                    self.parent.mlStatusLabel.setStyleSheet("color: orange; font-weight: bold;")
+                else:
+                    self.parent.mlStatusLabel.setText("ML Model 2.0: Active")
+                    self.parent.mlStatusLabel.setStyleSheet("color: green; font-weight: bold;")
         else:
-            self.ml_toggle_button.setText("ML Model 2.0: Off")
+            if self.ml_classifier.use_dummy_model:
+                self.ml_toggle_button.setText("ML Model 2.0 (Demo): Off")
+            else:
+                self.ml_toggle_button.setText("ML Model 2.0: Off")
+                
             self.ml_results_group.setVisible(False)
             print("Advanced ML Model 2.0 disabled")
             
             # Update status label if available
             if hasattr(self.parent, 'mlStatusLabel'):
-                self.parent.mlStatusLabel.setText("ML Model 2.0: Ready")
-                self.parent.mlStatusLabel.setStyleSheet("color: black;")
+                if self.ml_classifier.use_dummy_model:
+                    self.parent.mlStatusLabel.setText("ML Model 2.0: Demo Ready")
+                    self.parent.mlStatusLabel.setStyleSheet("color: orange;")
+                else:
+                    self.parent.mlStatusLabel.setText("ML Model 2.0: Ready")
+                    self.parent.mlStatusLabel.setStyleSheet("color: black;")
     
     def classify_current_ecg(self, ecg_values, time_values=None):
         """
