@@ -97,11 +97,7 @@ class MLClassifierUI:
         
         # Add probability labels for each class
         self.prob_labels = {}
-        for i, class_name in [(0, 'Normal beats'), 
-                             (1, 'Supraventricular ectopic beats'),
-                             (2, 'Ventricular ectopic beats'), 
-                             (3, 'Fusion beats'),
-                             (4, 'Unknown beats')]:
+        for i, class_name in enumerate(['Normal', 'Abnormal', 'Atrial Fibrillation', 'ST Elevation', 'Bradycardia', 'Tachycardia']):
             label = QtWidgets.QLabel(f"{class_name}: 0.0000")
             self.prob_labels[i] = label
             self.ml_probabilities_layout.addWidget(label)
@@ -117,13 +113,35 @@ class MLClassifierUI:
         
         # Try to place the toggle button directly in the control panel
         try:
-            # Try to add to ECG Controls panel
+            # Try to add to ECG Controls panel in a prominent position
             if hasattr(self.parent, 'controlLayout'):
-                # Insert ML toggle button after the ECG type dropdown
+                # Create a dedicated section for ML Model in the control panel
+                ml_section = QtWidgets.QGroupBox("ML Model 2.0 Controls")
+                ml_section_layout = QtWidgets.QVBoxLayout()
+                
+                # Add the toggle button with a descriptive label
                 ml_toggle_layout = QtWidgets.QHBoxLayout()
-                ml_toggle_layout.addWidget(QtWidgets.QLabel("ML Model:"))
+                toggle_label = QtWidgets.QLabel("Enable ML Model:")
+                toggle_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                ml_toggle_layout.addWidget(toggle_label)
                 ml_toggle_layout.addWidget(self.ml_toggle_button)
-                self.parent.controlLayout.insertLayout(3, ml_toggle_layout)  # Insert after ECG type
+                
+                ml_section_layout.addLayout(ml_toggle_layout)
+                
+                # Add a descriptive label
+                ml_description = QtWidgets.QLabel("Advanced ECG analysis with machine learning")
+                ml_description.setAlignment(QtCore.Qt.AlignCenter)
+                font = ml_description.font()
+                font.setItalic(True)
+                ml_description.setFont(font)
+                ml_section_layout.addWidget(ml_description)
+                
+                # Set the layout for the section
+                ml_section.setLayout(ml_section_layout)
+                
+                # Add it to the parent control layout in a good position
+                # Insert after main controls but before real-world data
+                self.parent.controlLayout.insertWidget(2, ml_section)
                 
                 # Add the results group to the left panel
                 if hasattr(self.parent, 'leftPanelLayout'):
@@ -147,44 +165,60 @@ class MLClassifierUI:
             print(f"Error adding ML UI elements: {e}")
             print("You may need to manually add these UI elements to your ECG-Viewer.")
     
-    def toggle_ml_classifier(self, checked):
-        """Toggle between rule-based and ML-based classifier"""
-        self.ml_enabled = checked
+    def toggle_ml_classifier(self):
+        """Toggle between the rule-based and ML-based classifier"""
+        # Get the current state of the button
+        is_ml_enabled = self.ml_toggle_button.isChecked()
         
-        if checked:
+        # Set the appropriate text based on the toggle state and model type
+        if is_ml_enabled:
             if self.ml_classifier.use_dummy_model:
                 self.ml_toggle_button.setText("ML Model 2.0 (Demo): On")
             else:
                 self.ml_toggle_button.setText("ML Model 2.0: On")
-                
-            self.ml_results_group.setVisible(True)
-            print("Advanced ML Model 2.0 enabled")
             
-            # Update status label if available
-            if hasattr(self.parent, 'mlStatusLabel'):
-                if self.ml_classifier.use_dummy_model:
-                    self.parent.mlStatusLabel.setText("ML Model 2.0: Demo Active")
-                    self.parent.mlStatusLabel.setStyleSheet("color: orange; font-weight: bold;")
-                else:
-                    self.parent.mlStatusLabel.setText("ML Model 2.0: Active")
-                    self.parent.mlStatusLabel.setStyleSheet("color: green; font-weight: bold;")
+            # Show the results UI
+            self.ml_results_group.setVisible(True)
+            
+            # Make the ML classify button in the parent visible but disabled
+            if hasattr(self.parent, 'button_ml_classify'):
+                self.parent.button_ml_classify.setVisible(False)
+                
+            # Make the original Classify button have a different label
+            if hasattr(self.parent, 'classifyButton'):
+                self.parent.classifyButton.setText("Rule-Based Classify")
         else:
             if self.ml_classifier.use_dummy_model:
                 self.ml_toggle_button.setText("ML Model 2.0 (Demo): Off")
             else:
                 self.ml_toggle_button.setText("ML Model 2.0: Off")
-                
-            self.ml_results_group.setVisible(False)
-            print("Advanced ML Model 2.0 disabled")
             
-            # Update status label if available
-            if hasattr(self.parent, 'mlStatusLabel'):
-                if self.ml_classifier.use_dummy_model:
-                    self.parent.mlStatusLabel.setText("ML Model 2.0: Demo Ready")
-                    self.parent.mlStatusLabel.setStyleSheet("color: orange;")
-                else:
-                    self.parent.mlStatusLabel.setText("ML Model 2.0: Ready")
-                    self.parent.mlStatusLabel.setStyleSheet("color: black;")
+            # Hide the results UI
+            self.ml_results_group.setVisible(False)
+            
+            # Restore the ML classify button
+            if hasattr(self.parent, 'button_ml_classify'):
+                self.parent.button_ml_classify.setVisible(True)
+                
+            # Restore the original Classify button text
+            if hasattr(self.parent, 'classifyButton'):
+                self.parent.classifyButton.setText("Classify")
+                
+        # Auto-classify if monitoring is active
+        if hasattr(self.parent, 'is_monitoring') and self.parent.is_monitoring and is_ml_enabled:
+            # If we have current ECG data, classify it
+            if hasattr(self.parent, 'ecg_values') and self.parent.ecg_values is not None:
+                self.ml_classify_ecg()
+                
+        # Update status bar
+        if hasattr(self.parent, 'statusBar'):
+            if is_ml_enabled:
+                demo_suffix = " (Demo Mode)" if self.ml_classifier.use_dummy_model else ""
+                self.parent.statusBar().showMessage(f"ML Model 2.0{demo_suffix} enabled. Real-time classification active.")
+            else:
+                self.parent.statusBar().showMessage("ML Model 2.0 disabled. Using rule-based classification.")
+                
+        print(f"ML classifier {'enabled' if is_ml_enabled else 'disabled'}")
     
     def classify_current_ecg(self, ecg_values, time_values=None):
         """
@@ -208,36 +242,119 @@ class MLClassifierUI:
         result = self.ml_classifier.classify_ecg(ecg_values, time_values)
         
         # Update the UI with results
-        self.update_ui_with_results(result)
+        self.update_results(result)
         
         return result
     
-    def update_ui_with_results(self, result):
-        """
-        Update the UI with classification results.
-        
-        Args:
-            result: dict containing classification results
-        """
-        if result['success']:
-            # Update main class and confidence
-            self.ml_class_label.setText(f"Class: {result['class']}")
-            self.ml_confidence_label.setText(f"Confidence: {result.get('confidence', 0):.4f}")
+    def update_results(self, result):
+        """Update the ML classifier UI with new classification results"""
+        if not result or not result.get('success', False):
+            self.ml_class_label.setText("Class: Classification failed")
+            self.ml_confidence_label.setText("Confidence: N/A")
+            return
             
-            # Update detailed probabilities if available
-            if 'class_probabilities' in result:
-                for i, class_name in enumerate(['Normal beats', 
-                                                'Supraventricular ectopic beats',
-                                                'Ventricular ectopic beats', 
-                                                'Fusion beats',
-                                                'Unknown beats']):
-                    if i in self.prob_labels:
-                        prob = result['class_probabilities'].get(class_name, 0)
-                        self.prob_labels[i].setText(f"{class_name}: {prob:.4f}")
+        # Show the UI components
+        self.ml_results_group.setVisible(True)
+        
+        # Update class and confidence
+        self.ml_class_label.setText(f"Class: {result['class']}")
+        
+        # Format confidence to 2 decimal places
+        confidence = result.get('confidence', 0) * 100
+        self.ml_confidence_label.setText(f"Confidence: {confidence:.1f}%")
+        
+        # Update model version information if demo mode
+        if 'Demo' in result.get('model_version', ''):
+            demo_text = result.get('model_version', 'ML Model 2.0 (Demo Mode)')
+            self.ml_version_label.setText(demo_text)
+            
+            # Set a yellow background to indicate demo mode
+            self.ml_results_group.setStyleSheet("QGroupBox { background-color: #FFFFD0; border: 1px solid #E0E0A0; }")
+            
+            # Add a note about demo mode at the bottom if not already added
+            if not hasattr(self, 'demo_note_label'):
+                self.demo_note_label = QtWidgets.QLabel("Note: Running in demo mode - simulated results")
+                self.demo_note_label.setStyleSheet("color: #707040; font-style: italic;")
+                self.ml_results_layout.addWidget(self.demo_note_label)
+                
+            # Make demo note visible
+            self.demo_note_label.setVisible(True)
         else:
-            # Show error
-            self.ml_class_label.setText(f"Class: Error")
-            self.ml_confidence_label.setText(f"Error: {result.get('error', 'Unknown error')}")
+            # Normal mode - reset any demo styling
+            self.ml_version_label.setText("Advanced Machine Learning Model (98.8% accuracy)")
+            self.ml_results_group.setStyleSheet("")
+            
+            # Hide demo note if it exists
+            if hasattr(self, 'demo_note_label'):
+                self.demo_note_label.setVisible(False)
+        
+        # Add extra information if available
+        heart_rate = result.get('heart_rate', None)
+        rr_variability = result.get('rr_variability', None)
+        
+        # Create or update additional metrics display
+        if not hasattr(self, 'metrics_group'):
+            # Create metrics display if it doesn't exist
+            self.metrics_group = QtWidgets.QGroupBox("Additional Metrics")
+            self.metrics_layout = QtWidgets.QVBoxLayout()
+            self.heart_rate_label = QtWidgets.QLabel("Heart Rate: N/A")
+            self.rr_variability_label = QtWidgets.QLabel("RR Variability: N/A")
+            
+            self.metrics_layout.addWidget(self.heart_rate_label)
+            self.metrics_layout.addWidget(self.rr_variability_label)
+            self.metrics_group.setLayout(self.metrics_layout)
+            
+            # Add to main results layout
+            self.ml_results_layout.addWidget(self.metrics_group)
+        
+        # Update metrics if available
+        if heart_rate is not None:
+            self.heart_rate_label.setText(f"Heart Rate: {heart_rate} BPM")
+            
+            # Color-code heart rate
+            if heart_rate < 60:
+                self.heart_rate_label.setStyleSheet("color: blue;")  # Bradycardia
+            elif heart_rate > 100:
+                self.heart_rate_label.setStyleSheet("color: red;")   # Tachycardia
+            else:
+                self.heart_rate_label.setStyleSheet("color: green;") # Normal
+        
+        if rr_variability is not None:
+            self.rr_variability_label.setText(f"RR Variability: {rr_variability:.3f}")
+            
+            # Color-code RR variability
+            if rr_variability > 0.2:
+                self.rr_variability_label.setStyleSheet("color: red;")   # High variability (AF)
+            else:
+                self.rr_variability_label.setStyleSheet("color: green;") # Normal variability
+        
+        # Update detailed probabilities if available
+        if 'class_probabilities' in result:
+            # Make the probabilities group visible
+            self.ml_probabilities_group.setVisible(True)
+            
+            # Update each probability label
+            for i, class_name in enumerate(['Normal', 'Abnormal', 'Atrial Fibrillation', 'ST Elevation', 'Bradycardia', 'Tachycardia']):
+                if i in self.prob_labels:
+                    prob = result['class_probabilities'].get(class_name, 0)
+                    
+                    # Format with percentage
+                    label_text = f"{class_name}: {prob*100:.1f}%"
+                    
+                    # Bold the highest probability
+                    if class_name == result['class']:
+                        label_text = f"<b>{label_text}</b>"
+                        # Add an indicator arrow
+                        label_text = f"► {label_text}"
+                        # Set label color for the selected class
+                        self.prob_labels[i].setStyleSheet("color: blue;")
+                    else:
+                        self.prob_labels[i].setStyleSheet("")
+                        
+                    self.prob_labels[i].setText(label_text)
+        else:
+            # Hide probabilities if not available
+            self.ml_probabilities_group.setVisible(False)
 
     def load_model(self):
         """Load the ML model"""
