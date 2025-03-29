@@ -298,18 +298,59 @@ class MLClassifier:
                 # Calculate time between peaks in ms
                 if isinstance(time_values, list):
                     time_values = np.array(time_values)
-                    
-                rr_intervals = np.diff([time_values[i] for i in r_peaks if i < len(time_values)])
-                heart_rate = int(60000 / np.mean(rr_intervals)) if len(rr_intervals) > 0 else 70
-            else:
-                # Default if we can't calculate
-                heart_rate = 70
                 
+                # Get time values for detected peaks
+                peak_times = time_values[r_peaks]
+                
+                # Calculate intervals between peaks in ms
+                rr_intervals = np.diff(peak_times)
+                
+                # Average heart rate calculation
+                if len(rr_intervals) > 0:
+                    # Convert average interval to heart rate in BPM
+                    # For intervals in ms: HR = 60,000 / avg_interval
+                    avg_interval = np.mean(rr_intervals)
+                    
+                    # Check if time is in seconds or milliseconds
+                    if np.mean(np.diff(time_values)) < 1:  # Time in seconds
+                        heart_rate = int(60 / avg_interval)
+                    else:  # Time in milliseconds
+                        heart_rate = int(60000 / avg_interval)
+                else:
+                    heart_rate = 70  # Default when calculation fails
+            else:
+                # Not enough peaks detected, use an approximate method
+                # Estimate from signal length and sampling frequency
+                if len(ecg_values) > 100:
+                    # Estimate based on signal characteristics
+                    # Count zero crossings as a rough proxy for rhythm
+                    zero_crossings = np.sum(np.diff(np.signbit(ecg_values - np.mean(ecg_values))))
+                    heart_rate = int(zero_crossings * 15 / (len(ecg_values) / 250))
+                    
+                    # Limit to reasonable range
+                    heart_rate = max(40, min(heart_rate, 180))
+                else:
+                    heart_rate = 70  # Default value
+            
             # Calculate RR interval variability
             rr_variability = 0
             if len(r_peaks) > 2:
-                rr_intervals = np.diff([time_values[i] for i in r_peaks if i < len(time_values)])
-                rr_variability = np.std(rr_intervals) / np.mean(rr_intervals) if len(rr_intervals) > 0 else 0
+                # Calculate time between peaks in ms
+                if isinstance(time_values, list):
+                    time_values = np.array(time_values)
+                    
+                # Get time values for detected peaks
+                peak_times = time_values[r_peaks]
+                
+                # Calculate intervals between peaks
+                rr_intervals = np.diff(peak_times)
+                
+                if len(rr_intervals) > 1:
+                    # Coefficient of variation = standard deviation / mean
+                    rr_variability = np.std(rr_intervals) / np.mean(rr_intervals)
+            
+            # Cap RR variability to reasonable range (0-1)
+            rr_variability = min(max(0, rr_variability), 1.0)
             
             # Check for baseline wander (low frequency variation)
             if len(ecg_values) > 100:
@@ -343,16 +384,16 @@ class MLClassifier:
             # Set the class based on ECG type or detected characteristics
             if "bradycardia" in ecg_type or heart_rate < 60:
                 predicted_class = 4  # Bradycardia
-                confidence = 0.85
+                confidence = min(0.90, max(0.60, 0.90 - 0.01 * (60 - heart_rate)))  # Higher confidence the slower the HR
             elif "tachycardia" in ecg_type or heart_rate > 100:
                 predicted_class = 5  # Tachycardia
-                confidence = 0.80
+                confidence = min(0.90, max(0.60, 0.70 + 0.01 * (heart_rate - 100)))  # Higher confidence the faster the HR
             elif "fibrillation" in ecg_type or rr_variability > 0.2:
                 predicted_class = 2  # Atrial Fibrillation
-                confidence = 0.75
+                confidence = min(0.85, max(0.65, 0.65 + rr_variability * 0.5))  # Higher confidence with more variability
             elif "elevation" in ecg_type or (max_val > 2.0 and amplitude > 3.0):
                 predicted_class = 3  # ST Elevation 
-                confidence = 0.70
+                confidence = min(0.85, max(0.60, 0.60 + amplitude * 0.1))  # Higher confidence with larger amplitude
             elif "abnormal" in ecg_type or is_noisy:
                 predicted_class = 1  # Abnormal
                 confidence = 0.65
