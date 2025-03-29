@@ -76,46 +76,55 @@ class MLClassifier:
         pre_rr = 800  # Default value, would be calculated from actual R peaks
         post_rr = 800  # Default value, would be calculated from actual R peaks
         
-        # These are placeholder calculations - for actual implementation
-        # you would need to implement proper feature extraction
-        features = {
-            # Lead II features (prefix 0_)
-            '0_pre-RR': pre_rr,
-            '0_post-RR': post_rr,
-            '0_qrs_interval': 100,  # Placeholder for QRS interval in ms
-            '0_pq_interval': 160,   # Placeholder for PQ interval in ms
-            '0_qt_interval': 360,   # Placeholder for QT interval in ms
-            '0_st_interval': 120,   # Placeholder for ST interval in ms
-            '0_pPeak': np.max(ecg_values[:len(ecg_values)//4]) * 0.3,  # Simplified P peak detection
-            '0_qPeak': -np.min(ecg_values[len(ecg_values)//4:len(ecg_values)//2]) * 0.5,  # Simplified Q peak
-            '0_rPeak': np.max(ecg_values),  # R peak is usually the maximum value
-            '0_sPeak': -np.min(ecg_values[len(ecg_values)//2:3*len(ecg_values)//4]) * 0.7,  # Simplified S peak
-            '0_tPeak': np.max(ecg_values[3*len(ecg_values)//4:]) * 0.6,  # Simplified T peak detection
-            '0_qrs_morph0': 0.1,  # Placeholder QRS morphology features
-            '0_qrs_morph1': 0.2,
-            '0_qrs_morph2': 0.3,
-            '0_qrs_morph3': 0.4,
-            '0_qrs_morph4': 0.5,
-            
-            # Lead V5 features (prefix 1_) - in a real implementation,
-            # these would come from a second lead, but here we're using the same data
-            '1_pre-RR': pre_rr,
-            '1_post-RR': post_rr,
-            '1_qrs_interval': 100,
-            '1_pq_interval': 160,
-            '1_qt_interval': 360,
-            '1_st_interval': 120,
-            '1_pPeak': np.max(ecg_values[:len(ecg_values)//4]) * 0.3,
-            '1_qPeak': -np.min(ecg_values[len(ecg_values)//4:len(ecg_values)//2]) * 0.5,
-            '1_rPeak': np.max(ecg_values),
-            '1_sPeak': -np.min(ecg_values[len(ecg_values)//2:3*len(ecg_values)//4]) * 0.7,
-            '1_tPeak': np.max(ecg_values[3*len(ecg_values)//4:]) * 0.6,
-            '1_qrs_morph0': 0.1,
-            '1_qrs_morph1': 0.2,
-            '1_qrs_morph2': 0.3,
-            '1_qrs_morph3': 0.4,
-            '1_qrs_morph4': 0.5,
-        }
+        # Define feature order expected by the model
+        feature_order = [
+            '0_pre-RR', '0_post-RR', '0_qrs_interval', '0_pq_interval', 
+            '0_qt_interval', '0_st_interval', '0_pPeak', '0_qPeak', 
+            '0_rPeak', '0_sPeak', '0_tPeak', '0_qrs_morph0', '0_qrs_morph1', 
+            '0_qrs_morph2', '0_qrs_morph3', '0_qrs_morph4', '1_pre-RR', 
+            '1_post-RR', '1_qrs_interval', '1_pq_interval', '1_qt_interval', 
+            '1_st_interval', '1_pPeak', '1_qPeak', '1_rPeak', '1_sPeak', 
+            '1_tPeak', '1_qrs_morph0', '1_qrs_morph1', '1_qrs_morph2', 
+            '1_qrs_morph3', '1_qrs_morph4'
+        ]
+        
+        # Create features with the expected column order
+        features = {}
+        for feature in feature_order:
+            if feature.startswith('0_pre-RR') or feature.startswith('1_pre-RR'):
+                features[feature] = pre_rr
+            elif feature.startswith('0_post-RR') or feature.startswith('1_post-RR'):
+                features[feature] = post_rr
+            elif feature.endswith('_qrs_interval'):
+                features[feature] = 100  # Placeholder for QRS interval in ms
+            elif feature.endswith('_pq_interval'):
+                features[feature] = 160  # Placeholder for PQ interval in ms
+            elif feature.endswith('_qt_interval'):
+                features[feature] = 360  # Placeholder for QT interval in ms
+            elif feature.endswith('_st_interval'):
+                features[feature] = 120  # Placeholder for ST interval in ms
+            elif feature.endswith('pPeak'):
+                features[feature] = np.max(ecg_values[:len(ecg_values)//4]) * 0.3  # Simplified P peak detection
+            elif feature.endswith('qPeak'):
+                features[feature] = -np.min(ecg_values[len(ecg_values)//4:len(ecg_values)//2]) * 0.5  # Simplified Q peak
+            elif feature.endswith('rPeak'):
+                features[feature] = np.max(ecg_values)  # R peak is usually the maximum value
+            elif feature.endswith('sPeak'):
+                features[feature] = -np.min(ecg_values[len(ecg_values)//2:3*len(ecg_values)//4]) * 0.7  # Simplified S peak
+            elif feature.endswith('tPeak'):
+                features[feature] = np.max(ecg_values[3*len(ecg_values)//4:]) * 0.6  # Simplified T peak detection
+            elif 'morph0' in feature:
+                features[feature] = 0.1  # Placeholder QRS morphology features 
+            elif 'morph1' in feature:
+                features[feature] = 0.2
+            elif 'morph2' in feature:
+                features[feature] = 0.3
+            elif 'morph3' in feature:
+                features[feature] = 0.4
+            elif 'morph4' in feature:
+                features[feature] = 0.5
+            else:
+                features[feature] = 0.0  # Default value for unknown features
         
         return features
     
@@ -142,31 +151,8 @@ class MLClassifier:
             # Convert ECG data to features
             features = self.convert_ecg_to_features(ecg_values, time_values)
             
-            # Convert features to dataframe with correct order of columns
+            # Convert features to dataframe - features are already in the correct order
             features_df = pd.DataFrame([features])
-            
-            # Debug: XGBoost expects features in a specific order
-            try:
-                # Reorder columns to match model expectations if needed
-                expected_column_order = ['0_pre-RR', '0_post-RR', '0_qrs_interval', '0_pq_interval', 
-                                      '0_qt_interval', '0_st_interval', '0_pPeak', '0_qPeak', 
-                                      '0_rPeak', '0_sPeak', '0_tPeak', '0_qrs_morph0', '0_qrs_morph1', 
-                                      '0_qrs_morph2', '0_qrs_morph3', '0_qrs_morph4', '1_pre-RR', 
-                                      '1_post-RR', '1_qrs_interval', '1_pq_interval', '1_qt_interval', 
-                                      '1_st_interval', '1_pPeak', '1_qPeak', '1_rPeak', '1_sPeak', 
-                                      '1_tPeak', '1_qrs_morph0', '1_qrs_morph1', '1_qrs_morph2', 
-                                      '1_qrs_morph3', '1_qrs_morph4']
-                
-                # Ensure all expected columns exist
-                for col in expected_column_order:
-                    if col not in features_df.columns:
-                        features_df[col] = 0.0
-                
-                # Reorder columns
-                features_df = features_df[expected_column_order]
-                
-            except Exception as e:
-                print(f"Warning: Could not reorder features: {e}")
             
             # Get prediction
             prediction = self.model.predict(features_df)[0]
