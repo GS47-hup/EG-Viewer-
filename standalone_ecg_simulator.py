@@ -1082,7 +1082,6 @@ class ECGSimulator(QtWidgets.QMainWindow):
         self.hrSlider.setEnabled(not monitoring_controls_disabled)
         self.noiseSlider.setEnabled(not monitoring_controls_disabled)
         self.ecgTypeCombo.setEnabled(not monitoring_controls_disabled)
-        self.loadECGButton.setEnabled(not monitoring_controls_disabled)
         
         # Additional UI updates can be added here
 
