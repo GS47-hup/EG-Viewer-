@@ -214,9 +214,9 @@ class MLClassifierUI:
         if hasattr(self.parent, 'statusBar'):
             if is_ml_enabled:
                 demo_suffix = " (Demo Mode)" if self.ml_classifier.use_dummy_model else ""
-                self.parent.statusBar().showMessage(f"ML Model 2.0{demo_suffix} enabled. Real-time classification active.")
+                self.parent.statusBar.showMessage(f"ML Model 2.0{demo_suffix} enabled. Real-time classification active.")
             else:
-                self.parent.statusBar().showMessage("ML Model 2.0 disabled. Using rule-based classification.")
+                self.parent.statusBar.showMessage("ML Model 2.0 disabled. Using rule-based classification.")
                 
         print(f"ML classifier {'enabled' if is_ml_enabled else 'disabled'}")
     
