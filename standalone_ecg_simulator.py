@@ -1069,20 +1069,20 @@ class ECGSimulator(QtWidgets.QMainWindow):
         """Update the UI state based on current status"""
         # Enable/disable buttons based on state
         has_ecg_data = (self.current_ecg is not None) or self.monitoring_active or (self.current_real_world_sample is not None)
-        self.button_classify.setEnabled(has_ecg_data)
+        self.classifyButton.setEnabled(has_ecg_data)
         self.button_ml_classify.setEnabled(has_ecg_data)
         
         # Update monitoring button state
         is_ecg_loaded = self.ecg_file is not None or self.loaded_samples is not None
-        self.button_monitor.setEnabled(is_ecg_loaded and not self.monitoring_active)
-        self.button_stop.setEnabled(self.monitoring_active)
+        self.startMonitoringButton.setEnabled(is_ecg_loaded and not self.monitoring_active)
+        self.stopMonitoringButton.setEnabled(self.monitoring_active)
         
         # Enable/disable other controls based on monitoring state
         monitoring_controls_disabled = self.monitoring_active
-        self.comboBoxRate.setEnabled(not monitoring_controls_disabled)
-        self.comboBoxLeadSelect.setEnabled(not monitoring_controls_disabled)
+        self.hrSlider.setEnabled(not monitoring_controls_disabled)
+        self.noiseSlider.setEnabled(not monitoring_controls_disabled)
+        self.ecgTypeCombo.setEnabled(not monitoring_controls_disabled)
         self.loadECGButton.setEnabled(not monitoring_controls_disabled)
-        self.button_clear.setEnabled(not monitoring_controls_disabled)
         
         # Additional UI updates can be added here
 
