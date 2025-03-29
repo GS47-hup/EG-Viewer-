@@ -514,7 +514,7 @@ class ECGSimulator(QtWidgets.QMainWindow):
             self.ecg_canvas.update_plot(self.ecg_buffer_time, self.ecg_buffer_values, r_peaks)
             
             # If ML Model 2.0 is enabled, automatically classify the current data
-            if hasattr(self, 'ml_classifier_ui') and self.ml_classifier_ui.ml_toggle_button.isChecked() and len(self.ecg_buffer_values) > 100:
+            if hasattr(self, 'ml_classifier_ui') and self.ml_classifier_ui.ml_enabled and len(self.ecg_buffer_values) > 100:
                 # Only update the UI periodically (every ~2 seconds) to avoid too many updates
                 if hasattr(self, 'last_ml_classify_time'):
                     if (self.current_time - self.last_ml_classify_time) > 2000:  # 2 seconds

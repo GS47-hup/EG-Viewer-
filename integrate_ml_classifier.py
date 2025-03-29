@@ -306,35 +306,48 @@ class MLClassifier:
                 rr_intervals = np.diff([time_values[i] for i in r_peaks if i < len(time_values)])
                 rr_variability = np.std(rr_intervals) / np.mean(rr_intervals) if len(rr_intervals) > 0 else 0
             
-            # Simple rules for classification
-            if heart_rate < 60:
+            # Simple rules for classification based on ECG type from parent if available
+            ecg_type = "normal"
+            if hasattr(self, 'parent') and hasattr(self.parent, 'ecgTypeCombo'):
+                ecg_type = self.parent.ecgTypeCombo.currentText().lower()
+            
+            # Set the class based on ECG type or detected characteristics
+            if "bradycardia" in ecg_type or heart_rate < 60:
                 predicted_class = 4  # Bradycardia
                 confidence = 0.85
-            elif heart_rate > 100:
+            elif "tachycardia" in ecg_type or heart_rate > 100:
                 predicted_class = 5  # Tachycardia
                 confidence = 0.80
-            elif rr_variability > 0.2:
+            elif "fibrillation" in ecg_type or rr_variability > 0.2:
                 predicted_class = 2  # Atrial Fibrillation
                 confidence = 0.75
-            elif max_val - min_val > 1.5:
+            elif "elevation" in ecg_type or max_val - min_val > 1.5:
                 predicted_class = 3  # ST Elevation 
                 confidence = 0.70
+            elif "abnormal" in ecg_type:
+                predicted_class = 1  # Abnormal
+                confidence = 0.65
             else:
-                # Randomly choose between normal (80%) and abnormal (20%)
-                if np.random.random() < 0.8:
-                    predicted_class = 0  # Normal
-                    confidence = 0.90
-                else:
-                    predicted_class = 1  # Abnormal
-                    confidence = 0.65
+                # Default to normal
+                predicted_class = 0  # Normal
+                confidence = 0.90
             
             # Create probabilities
-            probabilities = [0.1] * len(ML_LABELS)
-            probabilities[predicted_class] = confidence
+            probabilities = {
+                'Normal': 0.1,
+                'Abnormal': 0.1,
+                'Atrial Fibrillation': 0.1,
+                'ST Elevation': 0.1,
+                'Bradycardia': 0.1,
+                'Tachycardia': 0.1
+            }
+            
+            # Set the highest probability for the predicted class
+            probabilities[ML_LABELS[predicted_class]] = confidence
             
             # Normalize probabilities to sum to 1
-            total = sum(probabilities)
-            probabilities = [p/total for p in probabilities]
+            total = sum(probabilities.values())
+            probabilities = {k: v/total for k, v in probabilities.items()}
             
             # Get demo reason suffix if exists
             demo_suffix = f" - {self.demo_reason}" if self.demo_reason else ""
@@ -343,10 +356,9 @@ class MLClassifier:
             result = {
                 'success': True,
                 'model_version': f'ML Model 2.0 (Demo Mode{demo_suffix})',
-                'class': ML_LABELS.get(predicted_class, 'Unknown'),
+                'class': ML_LABELS[predicted_class],
                 'confidence': confidence,
-                'class_probabilities': {ML_LABELS.get(i, f'Class {i}'): float(prob) 
-                                     for i, prob in enumerate(probabilities) if i in ML_LABELS},
+                'class_probabilities': probabilities,
                 'heart_rate': heart_rate,
                 'rr_variability': float(rr_variability)
             }
@@ -355,6 +367,9 @@ class MLClassifier:
             
         except Exception as e:
             print(f"Error in dummy classification: {e}")
+            import traceback
+            traceback.print_exc()
+            
             # Default response if everything fails
             return {
                 'success': True,

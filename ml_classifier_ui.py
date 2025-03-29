@@ -31,7 +31,7 @@ class MLClassifierUI:
         self.classes = ["Normal", "Abnormal", "Atrial Fibrillation", "ST Elevation", "Bradycardia", "Tachycardia"]
         
         # Load ML model
-        self.load_model()
+        self.model = self.ml_classifier.model  # Store reference to the model
         
         # Update parent's ML status label if available
         if hasattr(parent_app, 'mlStatusLabel'):
@@ -168,10 +168,10 @@ class MLClassifierUI:
     def toggle_ml_classifier(self):
         """Toggle between the rule-based and ML-based classifier"""
         # Get the current state of the button
-        is_ml_enabled = self.ml_toggle_button.isChecked()
+        self.ml_enabled = self.ml_toggle_button.isChecked()
         
         # Set the appropriate text based on the toggle state and model type
-        if is_ml_enabled:
+        if self.ml_enabled:
             if self.ml_classifier.use_dummy_model:
                 self.ml_toggle_button.setText("ML Model 2.0 (Demo): On")
             else:
@@ -205,20 +205,20 @@ class MLClassifierUI:
                 self.parent.classifyButton.setText("Classify")
                 
         # Auto-classify if monitoring is active
-        if hasattr(self.parent, 'is_monitoring') and self.parent.is_monitoring and is_ml_enabled:
+        if hasattr(self.parent, 'is_monitoring') and self.parent.is_monitoring and self.ml_enabled:
             # If we have current ECG data, classify it
             if hasattr(self.parent, 'ecg_values') and self.parent.ecg_values is not None:
                 self.ml_classify_ecg()
                 
         # Update status bar
         if hasattr(self.parent, 'statusBar'):
-            if is_ml_enabled:
+            if self.ml_enabled:
                 demo_suffix = " (Demo Mode)" if self.ml_classifier.use_dummy_model else ""
                 self.parent.statusBar.showMessage(f"ML Model 2.0{demo_suffix} enabled. Real-time classification active.")
             else:
                 self.parent.statusBar.showMessage("ML Model 2.0 disabled. Using rule-based classification.")
                 
-        print(f"ML classifier {'enabled' if is_ml_enabled else 'disabled'}")
+        print(f"ML classifier {'enabled' if self.ml_enabled else 'disabled'}")
     
     def classify_current_ecg(self, ecg_values, time_values=None):
         """
@@ -341,26 +341,32 @@ class MLClassifierUI:
                     # Format with percentage
                     label_text = f"{class_name}: {prob*100:.1f}%"
                     
-                    # Bold the highest probability
+                    # Highlight the highest probability
                     if class_name == result['class']:
-                        label_text = f"<b>{label_text}</b>"
-                        # Add an indicator arrow
-                        label_text = f"► {label_text}"
-                        # Set label color for the selected class
-                        self.prob_labels[i].setStyleSheet("color: blue;")
+                        self.prob_labels[i].setText(f"► {class_name}: {prob*100:.1f}%")
+                        self.prob_labels[i].setStyleSheet("color: blue; font-weight: bold;")
                     else:
+                        self.prob_labels[i].setText(label_text)
                         self.prob_labels[i].setStyleSheet("")
-                        
-                    self.prob_labels[i].setText(label_text)
         else:
             # Hide probabilities if not available
             self.ml_probabilities_group.setVisible(False)
 
-    def load_model(self):
-        """Load the ML model"""
-        self.ml_classifier.load_model()
-        self.model = self.ml_classifier.model
-    
+    def ml_classify_ecg(self):
+        """Wrapper to classify ECG with ML model when button is clicked"""
+        if hasattr(self.parent, 'ecg_canvas') and self.parent.ecg_canvas.ecg_data is not None:
+            ecg_data = self.parent.ecg_canvas.ecg_data
+            time_data = self.parent.ecg_canvas.time_data
+            
+            # Call the ML classifier
+            result = self.classify_current_ecg(ecg_data, time_data)
+            
+            return result
+        else:
+            return {
+                'success': False,
+                'error': 'No ECG data available'
+            }
 
 # Example usage - this would be called from the main ECG-Viewer app
 if __name__ == "__main__":
