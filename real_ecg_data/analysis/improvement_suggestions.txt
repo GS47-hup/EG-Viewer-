@@ -1,0 +1,14 @@
+For False Positives (Normal classified as Abnormal):
+  - Adjust thresholds for 'wavelet_energy_5' feature
+  - Adjust thresholds for 'mean' feature
+  - Adjust thresholds for 'max' feature
+For False Negatives (Abnormal classified as Normal):
+  - Adjust thresholds for 'st_elevation' feature
+  - Adjust thresholds for 'mean' feature
+  - Adjust thresholds for 'wavelet_energy_4' feature
+
+General Improvement Suggestions:
+  - Collect more data for underrepresented classes
+  - Try additional feature engineering focused on the problematic features
+  - Consider ensemble methods combining multiple classifiers
+  - Experiment with class weights to balance false positives and false negatives
