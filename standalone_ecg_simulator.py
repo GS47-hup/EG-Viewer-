@@ -1040,7 +1040,7 @@ class ECGSimulator(QtWidgets.QMainWindow):
             if self.current_real_world_sample is not None:
                 # For real-world samples
                 ecg_signal = self.current_real_world_sample['values']
-                time_values = self.current_real_world_sample['times']  # Changed from 'time' to 'times'
+                time_values = self.current_real_world_sample['time']  # Using the correct key name 'time'
             elif self.monitoring_active:
                 # For real-time monitoring
                 ecg_signal = self.ecg_canvas.ecg_data
