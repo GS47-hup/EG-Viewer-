@@ -280,12 +280,17 @@ class MLClassifier:
             if time_values is None:
                 time_values = np.arange(len(ecg_values)) * 4  # 4ms per sample at 250Hz
                 
-            # Get max and min values
+            # Get signal statistics
             max_val = np.max(ecg_values)
             min_val = np.min(ecg_values)
+            amplitude = max_val - min_val
+            mean_val = np.mean(ecg_values)
+            std_val = np.std(ecg_values)
             
             # Calculate approximate heart rate using peak detection
-            r_peaks, _ = signal.find_peaks(ecg_values, height=0.5*max_val, distance=50)
+            # Use a percentile threshold instead of a fixed fraction of max
+            peak_threshold = np.percentile(ecg_values, 90)
+            r_peaks, _ = signal.find_peaks(ecg_values, height=peak_threshold, distance=20)
             
             # Calculate heart rate if we have multiple peaks
             heart_rate = 0
@@ -306,10 +311,34 @@ class MLClassifier:
                 rr_intervals = np.diff([time_values[i] for i in r_peaks if i < len(time_values)])
                 rr_variability = np.std(rr_intervals) / np.mean(rr_intervals) if len(rr_intervals) > 0 else 0
             
+            # Check for baseline wander (low frequency variation)
+            if len(ecg_values) > 100:
+                # Apply a high-pass filter to remove baseline wander
+                # and compare with original signal
+                sos = signal.butter(2, 0.5, 'hp', fs=250, output='sos')
+                filtered = signal.sosfilt(sos, ecg_values)
+                baseline_wander = np.std(ecg_values - filtered) / std_val
+            else:
+                baseline_wander = 0
+                
+            # Calculate signal quality metrics
+            signal_noise_ratio = amplitude / (std_val + 1e-6)
+            
             # Simple rules for classification based on ECG type from parent if available
             ecg_type = "normal"
             if hasattr(self, 'parent') and hasattr(self.parent, 'ecgTypeCombo'):
                 ecg_type = self.parent.ecgTypeCombo.currentText().lower()
+            
+            # Check for noise and baseline drift - indicators of poor quality that might appear abnormal
+            is_noisy = signal_noise_ratio < 3.0 or baseline_wander > 0.5
+            
+            # Normal ECG criteria
+            is_normal = (
+                (heart_rate >= 60 and heart_rate <= 100) and  # Normal heart rate
+                (rr_variability < 0.15) and                    # Low RR variability
+                (not is_noisy) and                            # Not too noisy
+                (signal_noise_ratio > 4.0)                     # Good signal quality
+            )
             
             # Set the class based on ECG type or detected characteristics
             if "bradycardia" in ecg_type or heart_rate < 60:
@@ -321,16 +350,20 @@ class MLClassifier:
             elif "fibrillation" in ecg_type or rr_variability > 0.2:
                 predicted_class = 2  # Atrial Fibrillation
                 confidence = 0.75
-            elif "elevation" in ecg_type or max_val - min_val > 1.5:
+            elif "elevation" in ecg_type or (max_val > 2.0 and amplitude > 3.0):
                 predicted_class = 3  # ST Elevation 
                 confidence = 0.70
-            elif "abnormal" in ecg_type:
+            elif "abnormal" in ecg_type or is_noisy:
                 predicted_class = 1  # Abnormal
                 confidence = 0.65
-            else:
-                # Default to normal
+            elif is_normal:
+                # Explicitly normal criteria met
                 predicted_class = 0  # Normal
                 confidence = 0.90
+            else:
+                # Default to abnormal if doesn't meet normal criteria
+                predicted_class = 1  # Abnormal
+                confidence = 0.60
             
             # Create probabilities
             probabilities = {
@@ -360,7 +393,8 @@ class MLClassifier:
                 'confidence': confidence,
                 'class_probabilities': probabilities,
                 'heart_rate': heart_rate,
-                'rr_variability': float(rr_variability)
+                'rr_variability': float(rr_variability),
+                'signal_quality': float(signal_noise_ratio)
             }
             
             return result
