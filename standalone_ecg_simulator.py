@@ -369,6 +369,7 @@ class ECGSimulator(QtWidgets.QMainWindow):
             self.loadNormalButton.setEnabled(False)
             self.loadAbnormalButton.setEnabled(False)
             self.classifyButton.setEnabled(True)
+            self.button_ml_classify.setEnabled(True)
             self.recordButton.setEnabled(True)
             
             # Update status
@@ -512,10 +513,50 @@ class ECGSimulator(QtWidgets.QMainWindow):
             # Update the plot
             self.ecg_canvas.update_plot(self.ecg_buffer_time, self.ecg_buffer_values, r_peaks)
             
+            # If ML Model 2.0 is enabled, automatically classify the current data
+            if hasattr(self, 'ml_classifier_ui') and self.ml_classifier_ui.ml_enabled and len(self.ecg_buffer_values) > 100:
+                # Only update the UI periodically (every ~2 seconds) to avoid too many updates
+                if hasattr(self, 'last_ml_classify_time'):
+                    if (self.current_time - self.last_ml_classify_time) > 2000:  # 2 seconds
+                        self.auto_classify_with_ml()
+                else:
+                    self.last_ml_classify_time = self.current_time
+                    self.auto_classify_with_ml()
+            
         except Exception as e:
             print(f"Error during real-time update: {str(e)}")
             import traceback
             traceback.print_exc()
+            
+    def auto_classify_with_ml(self):
+        """Automatically classify current ECG data with ML Model 2.0 without showing message box"""
+        try:
+            # Update the time of last classification
+            self.last_ml_classify_time = self.current_time
+            
+            # Only use this method for real-time generated ECG
+            if not self.monitoring_active or len(self.ecg_buffer_values) < 100:
+                return
+                
+            # Get the current ECG data
+            ecg_signal = self.ecg_canvas.ecg_data
+            time_values = self.ecg_canvas.time_data
+            
+            # Use the ML classifier
+            result = self.ml_classifier_ui.classify_current_ecg(ecg_signal, time_values)
+            
+            # Just update status bar - don't show message box
+            if result['success']:
+                self.statusBar.showMessage(f"ML Model 2.0: {result['class']} (Confidence: {result['confidence']:.2f})")
+                
+                # Update a label to show live classification if we have a ML status label
+                if hasattr(self, 'mlStatusLabel'):
+                    self.mlStatusLabel.setText(f"ML Model 2.0: {result['class']}")
+                    
+        except Exception as e:
+            # Don't show errors for automatic classification
+            print(f"Error in automatic ML classification: {str(e)}")
+            pass
     
     def toggle_recording(self):
         """Toggle recording of ECG data"""
@@ -1036,26 +1077,28 @@ class ECGSimulator(QtWidgets.QMainWindow):
     def ml_classify_ecg(self):
         """Classify ECG using the ML Model 2.0 classifier"""
         try:
-            # Get current ECG data
-            if self.current_real_world_sample is not None:
-                # For real-world samples
-                ecg_signal = self.current_real_world_sample['values']
-                time_values = self.current_real_world_sample['time']  # Using the correct key name 'time'
-            elif self.monitoring_active:
-                # For real-time monitoring
+            # Get current ECG data based on what's currently displayed
+            if self.monitoring_active:
+                # For real-time monitoring (generated ECG)
                 ecg_signal = self.ecg_canvas.ecg_data
                 time_values = self.ecg_canvas.time_data
-            else:
-                # For loaded samples
-                if self.current_ecg is not None:
-                    # Extract the signal data (excluding the label)
-                    ecg_signal = self.current_ecg[:, :-1] if self.current_ecg.shape[1] > 1 else self.current_ecg
-                    ecg_signal = ecg_signal.flatten()  # Flatten in case it's 2D
-                    # Generate time values based on sampling rate
-                    time_values = np.arange(len(ecg_signal)) * (1000 / self.sampling_rate)  # in ms
-                else:
-                    self.statusBar.showMessage("No ECG data available for classification")
+                if len(ecg_signal) < 10:
+                    self.statusBar.showMessage("Not enough ECG data for classification")
                     return
+            elif self.current_real_world_sample is not None:
+                # For real-world samples
+                ecg_signal = self.current_real_world_sample['values']
+                time_values = self.current_real_world_sample['time']
+            elif self.current_ecg is not None:
+                # For loaded samples
+                # Extract the signal data (excluding the label)
+                ecg_signal = self.current_ecg[:, :-1] if self.current_ecg.shape[1] > 1 else self.current_ecg
+                ecg_signal = ecg_signal.flatten()  # Flatten in case it's 2D
+                # Generate time values based on sampling rate
+                time_values = np.arange(len(ecg_signal)) * (1000 / self.sampling_rate)  # in ms
+            else:
+                self.statusBar.showMessage("No ECG data available for classification")
+                return
             
             # Use the ML Model 2.0 classifier
             result = self.ml_classifier_ui.classify_current_ecg(ecg_signal, time_values)

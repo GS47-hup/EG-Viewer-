@@ -101,22 +101,34 @@ class MLClassifierUI:
         # Initially hide the ML results
         self.ml_results_group.setVisible(False)
         
-        # Add to the parent's appropriate layout
+        # Try to place the toggle button directly in the control panel
         try:
-            if hasattr(self.parent, 'leftPanelLayout'):
-                # Add to the left panel if it exists in the new layout
-                self.parent.leftPanelLayout.addWidget(self.ml_toggle_button)
-                self.parent.leftPanelLayout.addWidget(self.ml_results_group)
-            elif hasattr(self.parent, 'button_ml_classify'):
-                # If we have the ML classify button, add next to it
-                parent_layout = self.parent.button_ml_classify.parent().layout()
-                if parent_layout is not None:
-                    parent_layout.addWidget(self.ml_toggle_button)
-                    parent_layout.addWidget(self.ml_results_group)
+            # Try to add to ECG Controls panel
+            if hasattr(self.parent, 'controlLayout'):
+                # Insert ML toggle button after the ECG type dropdown
+                ml_toggle_layout = QtWidgets.QHBoxLayout()
+                ml_toggle_layout.addWidget(QtWidgets.QLabel("ML Model:"))
+                ml_toggle_layout.addWidget(self.ml_toggle_button)
+                self.parent.controlLayout.insertLayout(3, ml_toggle_layout)  # Insert after ECG type
+                
+                # Add the results group to the left panel
+                if hasattr(self.parent, 'leftPanelLayout'):
+                    self.parent.leftPanelLayout.addWidget(self.ml_results_group)
+                else:
+                    # Fallback to the main control layout
+                    self.parent.controlLayout.addWidget(self.ml_results_group)
             else:
-                # Fallback to adding to the main control layout
-                self.parent.controlLayout.addWidget(self.ml_toggle_button)
-                self.parent.controlLayout.addWidget(self.ml_results_group)
+                # Fallback for other layouts
+                if hasattr(self.parent, 'leftPanelLayout'):
+                    self.parent.leftPanelLayout.addWidget(self.ml_toggle_button)
+                    self.parent.leftPanelLayout.addWidget(self.ml_results_group)
+                elif hasattr(self.parent, 'button_ml_classify'):
+                    parent_layout = self.parent.button_ml_classify.parent().layout()
+                    if parent_layout is not None:
+                        parent_layout.addWidget(self.ml_toggle_button)
+                        parent_layout.addWidget(self.ml_results_group)
+                else:
+                    print("Could not find appropriate layout for ML UI elements")
         except Exception as e:
             print(f"Error adding ML UI elements: {e}")
             print("You may need to manually add these UI elements to your ECG-Viewer.")
