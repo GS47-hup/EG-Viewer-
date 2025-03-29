@@ -199,7 +199,8 @@ class MLClassifierUI:
 
     def load_model(self):
         """Load the ML model"""
-        self.model = self.ml_classifier.load_model(self.model_path)
+        self.ml_classifier.load_model()
+        self.model = self.ml_classifier.model
     
 
 # Example usage - this would be called from the main ECG-Viewer app
