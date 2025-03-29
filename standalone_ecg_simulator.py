@@ -285,6 +285,15 @@ class ECGSimulator(QtWidgets.QMainWindow):
         
         # Set window properties
         self.setGeometry(100, 100, 1200, 800)
+        
+        # Initialize variables
+        self.ecg_file = None
+        self.loaded_samples = None
+        self.sampling_rate = 250  # Default sampling rate (Hz)
+        self.update_interval = 40  # Update interval for real-time monitoring (ms)
+        self.current_ecg = None  # Current ECG data
+        self.current_real_world_sample = None  # Current real-world sample
+        self.monitoring_active = False
     
     def _load_ecg_templates(self):
         """Load or create ECG templates for different types"""
