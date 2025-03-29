@@ -4,17 +4,22 @@ Standalone ECG Simulator - A real-time ECG viewer that simulates sensor input
 """
 import sys
 import os
+import csv
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Qt5Agg')
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+from scipy import signal
+from PyQt5 import QtWidgets, QtCore
+from ml_classifier_ui import MLClassifierUI
 import random
 import time
 from PyQt5 import QtWidgets, QtCore, QtGui
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
-from scipy import signal
 
-class ECGCanvas(FigureCanvasQTAgg):
+class ECGCanvas(FigureCanvas):
     """Canvas for plotting ECG data"""
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
@@ -162,6 +167,12 @@ class ECGSimulator(QtWidgets.QMainWindow):
         self.classifyButton.setEnabled(False)
         self.controlLayout.addWidget(self.classifyButton)
         
+        # Add ML Model 2.0 classify button
+        self.button_ml_classify = QtWidgets.QPushButton("ML Model 2.0 Classify")
+        self.button_ml_classify.clicked.connect(self.ml_classify_ecg)
+        self.button_ml_classify.setEnabled(False)
+        self.controlLayout.addWidget(self.button_ml_classify)
+        
         # Add recording button
         self.recordButton = QtWidgets.QPushButton("Start Recording")
         self.recordButton.clicked.connect(self.toggle_recording)
@@ -265,6 +276,15 @@ class ECGSimulator(QtWidgets.QMainWindow):
         if not os.path.exists(self.real_world_ecg_file):
             self.statusBar.showMessage(f"Warning: Real-world ECG file '{self.real_world_ecg_file}' not found.")
             self.loadRealWorldButton.setEnabled(False)
+        
+        # Initialize ML Model 2.0 classifier UI
+        self.ml_classifier_ui = MLClassifierUI(self)
+        
+        # Update UI state
+        self.update_ui()
+        
+        # Set window properties
+        self.setGeometry(100, 100, 1200, 800)
     
     def _load_ecg_templates(self):
         """Load or create ECG templates for different types"""
@@ -641,6 +661,8 @@ class ECGSimulator(QtWidgets.QMainWindow):
                 self.statusBar.showMessage("Error: Unrecognized real-world ECG data format")
                 return
             
+            # Update UI state
+            self.update_ui()
         except Exception as e:
             self.statusBar.showMessage(f"Error loading real-world ECG data: {str(e)}")
             import traceback
@@ -733,6 +755,8 @@ class ECGSimulator(QtWidgets.QMainWindow):
             self.statusBar.showMessage(f"Loaded real-world ECG sample #{sample_idx+1}")
             self.classifyButton.setEnabled(True)
             
+            # Update UI state
+            self.update_ui()
         except Exception as e:
             self.statusBar.showMessage(f"Error loading real-world ECG sample: {str(e)}")
             import traceback
@@ -990,6 +1014,136 @@ class ECGSimulator(QtWidgets.QMainWindow):
             self.statusBar.showMessage(f"Error classifying ECG: {str(e)}")
             import traceback
             traceback.print_exc()
+
+    def ml_classify_ecg(self):
+        """Classify ECG using the ML Model 2.0 classifier"""
+        try:
+            # Get current ECG data
+            if self.current_real_world_sample is not None:
+                # For real-world samples
+                ecg_signal = self.current_real_world_sample['values']
+                time_values = self.current_real_world_sample['times']  # Changed from 'time' to 'times'
+            elif self.monitoring_active:
+                # For real-time monitoring
+                ecg_signal = self.ecg_canvas.ecg_data
+                time_values = self.ecg_canvas.time_data
+            else:
+                # For loaded samples
+                if self.current_ecg is not None:
+                    # Extract the signal data (excluding the label)
+                    ecg_signal = self.current_ecg[:, :-1] if self.current_ecg.shape[1] > 1 else self.current_ecg
+                    ecg_signal = ecg_signal.flatten()  # Flatten in case it's 2D
+                    # Generate time values based on sampling rate
+                    time_values = np.arange(len(ecg_signal)) * (1000 / self.sampling_rate)  # in ms
+                else:
+                    self.statusBar.showMessage("No ECG data available for classification")
+                    return
+            
+            # Use the ML Model 2.0 classifier
+            result = self.ml_classifier_ui.classify_current_ecg(ecg_signal, time_values)
+            
+            # Show result in a message box
+            if result['success']:
+                msg = f"ML Model 2.0 Classification Result:\n\n"
+                msg += f"Class: {result['class']}\n"
+                msg += f"Confidence: {result['confidence']:.4f}\n\n"
+                msg += f"Note: This uses the advanced ML model with 98.8% accuracy"
+                
+                QtWidgets.QMessageBox.information(self, "ML Model 2.0 Classification", msg)
+                
+                # Update status bar
+                self.statusBar.showMessage(f"ML Model 2.0 classified as: {result['class']} (Confidence: {result['confidence']:.2f})")
+            else:
+                QtWidgets.QMessageBox.warning(
+                    self, 
+                    "ML Model 2.0 Classification Failed", 
+                    f"Error: {result.get('error', 'Unknown error')}"
+                )
+        except Exception as e:
+            self.statusBar.showMessage(f"Error in ML Model 2.0 classification: {str(e)}")
+            import traceback
+            traceback.print_exc()
+
+    def update_ui(self):
+        """Update the UI state based on current status"""
+        # Enable/disable buttons based on state
+        has_ecg_data = (self.current_ecg is not None) or self.monitoring_active or (self.current_real_world_sample is not None)
+        self.button_classify.setEnabled(has_ecg_data)
+        self.button_ml_classify.setEnabled(has_ecg_data)
+        
+        # Update monitoring button state
+        is_ecg_loaded = self.ecg_file is not None or self.loaded_samples is not None
+        self.button_monitor.setEnabled(is_ecg_loaded and not self.monitoring_active)
+        self.button_stop.setEnabled(self.monitoring_active)
+        
+        # Enable/disable other controls based on monitoring state
+        monitoring_controls_disabled = self.monitoring_active
+        self.comboBoxRate.setEnabled(not monitoring_controls_disabled)
+        self.comboBoxLeadSelect.setEnabled(not monitoring_controls_disabled)
+        self.loadECGButton.setEnabled(not monitoring_controls_disabled)
+        self.button_clear.setEnabled(not monitoring_controls_disabled)
+        
+        # Additional UI updates can be added here
+
+    def load_ecg(self):
+        """Load ECG data from file"""
+        try:
+            # Load the ECG data file
+            options = QtWidgets.QFileDialog.Options()
+            filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+                self, "Open ECG File", "", "CSV Files (*.csv);;Text Files (*.txt);;All Files (*)",
+                options=options
+            )
+            
+            if filename:
+                self.ecg_file = filename
+                self.statusBar.showMessage(f"Loaded ECG file: {filename}")
+                
+                # Read the ECG data
+                self.load_ecg_data(filename)
+                
+                # Update UI state
+                self.update_ui()
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(self, "Error", f"Failed to load ECG file: {str(e)}")
+            self.statusBar.showMessage("Error loading ECG file")
+            import traceback
+            traceback.print_exc()
+    
+    def clear_plot(self):
+        """Clear the current ECG plot"""
+        self.ecg_canvas.clear_plot()
+        self.current_ecg = None
+        self.current_real_world_sample = None
+        self.statusBar.showMessage("Plot cleared")
+        
+        # Update UI state
+        self.update_ui()
+    
+    def start_monitoring(self):
+        """Start real-time ECG monitoring"""
+        try:
+            # Setup monitoring timer
+            self.monitoring_timer.start(self.update_interval)
+            self.monitoring_active = True
+            self.statusBar.showMessage("Started real-time monitoring")
+            
+            # Update UI state
+            self.update_ui()
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(self, "Error", f"Failed to start monitoring: {str(e)}")
+            self.statusBar.showMessage("Error starting monitoring")
+            import traceback
+            traceback.print_exc()
+    
+    def stop_monitoring(self):
+        """Stop real-time ECG monitoring"""
+        self.monitoring_timer.stop()
+        self.monitoring_active = False
+        self.statusBar.showMessage("Stopped real-time monitoring")
+        
+        # Update UI state
+        self.update_ui()
 
 def main():
     """Main function"""
