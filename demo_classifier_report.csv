@@ -1,0 +1,8 @@
+file,expected,predicted,confidence,heart_rate,correct
+normal_60bpm.csv,Normal,Normal,0.9,60,True
+normal_70bpm.csv,Normal,Normal,0.9,70,True
+normal_70bpm_respiration.csv,Normal,Normal,0.9,70,True
+normal_75bpm.csv,Normal,Normal,0.9,75,True
+normal_75bpm_noise.csv,Normal,Normal,0.9,75,True
+normal_85bpm.csv,Normal,Normal,0.9,85,True
+normal_90bpm.csv,Normal,Normal,0.9,90,True

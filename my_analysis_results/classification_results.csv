@@ -1,0 +1,6 @@
+file,classification,confidence,reasons
+mitbih_sample_17928.csv,abnormal,60,Bradycardia detected (low heart rate)
+mitbih_sample_19994.csv,abnormal,60,Bradycardia detected (low heart rate)
+mitbih_sample_6874.csv,abnormal,60,Bradycardia detected (low heart rate)
+mitbih_sample_6973.csv,abnormal,60,Bradycardia detected (low heart rate)
+mitbih_sample_9818.csv,abnormal,60,Bradycardia detected (low heart rate)

@@ -1,0 +1,17 @@
+numpy
+pandas
+scikit-learn
+matplotlib
+requests
+seaborn
+xgboost
+flask
+gunicorn
+streamlit
+prefect
+tqdm
+joblib
+pyarrow
+psycopg
+psycopg_binary
+evidently 

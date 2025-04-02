@@ -1,0 +1,28 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+numpy = "*"
+pandas = "*"
+scikit-learn = "*"
+matplotlib = "*"
+requests = "*"
+seaborn = "*"
+xgboost = "*"
+flask = "*"
+gunicorn = "*"
+streamlit = "*"
+tqdm = "*"
+joblib = "*"
+pyarrow = "*"
+psycopg-binary = "*"
+evidently = "*"
+psycopg = "*"
+
+[dev-packages]
+ipykernel = "*"
+
+[requires]
+python_version = "3.12"

@@ -1,4 +1,4 @@
-# User Notes on Current Project State
+# User Notes (ml-integration-improvments)
 
 ## Application Overview
 
