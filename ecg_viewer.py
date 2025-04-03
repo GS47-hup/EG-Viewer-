@@ -65,7 +65,7 @@ except ImportError:
 
 # String used in the title-bar and about window
 VERSION = "v2.2.2"
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
 
 # About window. The class is so tiny it might as well be defined here.
 class AboutWindow(QtWidgets.QDialog, Ui_about_window):

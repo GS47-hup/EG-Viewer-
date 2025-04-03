@@ -48,7 +48,20 @@ def graph_draw(self) -> None:
             self.polyorder_box.setValue(7)
             logging.warning(f"Invalid filter settings: \n{e}")
             return
-        self.curve.setData(numpy.arange(fdat.size), fdat, skipFiniteCheck = True)
+        # Use the corresponding time history for the X axis
+        time_data_slice = self.time_history[25:self.value_history_max - 25]
+        self.curve.setData(time_data_slice, fdat, skipFiniteCheck = True)
+
+        # --- ADD SCROLLING LOGIC HERE ---
+        if self.capture_index > 0: # Ensure we have some data
+            try:
+                latest_time_ms = self.time_history[-1]
+                start_time_ms = max(0, latest_time_ms - 20000) # 20 seconds window
+                logging.debug(f"[Grapher Debug] Setting XRange (20s): {start_time_ms:.0f}ms to {latest_time_ms:.0f}ms")
+                # Set padding=0 to prevent auto-scaling beyond the desired range
+                self.graph.setXRange(start_time_ms, latest_time_ms, padding=0)
+            except Exception as e:
+                logging.warning(f"Error setting graph XRange in graph_draw: {e}")
 
     # Otherwise, display raw waveform with tracking information. VERY SLOW IF ENABLED
     else:
